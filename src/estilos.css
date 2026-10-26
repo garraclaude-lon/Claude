@@ -14,6 +14,7 @@
   --error: #a3261b;
   --error-fondo: #fdecea;
   --neutro-fondo: #eef0f3;
+  --sobre-primario: #ffffff;
   --radio: 8px;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 16px;
@@ -23,7 +24,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --fondo: #12161c;
     --superficie: #1b2129;
     --texto: #e6eaef;
@@ -39,13 +40,41 @@
     --error: #f08a80;
     --error-fondo: #3d1d1a;
     --neutro-fondo: #252c35;
+    --sobre-primario: #0b1a24;
+    color-scheme: dark;
   }
 }
 
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--fondo); }
+:root[data-theme="dark"] {
+  --fondo: #12161c;
+  --superficie: #1b2129;
+  --texto: #e6eaef;
+  --texto-suave: #a9b3bf;
+  --borde: #33404e;
+  --primario: #4aa8d8;
+  --primario-hover: #73bde3;
+  --acento-suave: #1d3240;
+  --ok: #6fd39a;
+  --ok-fondo: #173326;
+  --alerta: #f0c060;
+  --alerta-fondo: #3a2e12;
+  --error: #f08a80;
+  --error-fondo: #3d1d1a;
+  --neutro-fondo: #252c35;
+  --sobre-primario: #0b1a24;
+  color-scheme: dark;
+}
 
-.app { max-width: 1200px; margin: 0 auto; padding: 16px; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fondo); color: var(--texto); }
+
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-block: 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
 
 .encabezado h1 { margin: 8px 0 0; font-size: 1.75rem; color: var(--primario); }
 .subtitulo { margin: 2px 0 16px; color: var(--texto-suave); font-size: 1.05rem; }
@@ -147,7 +176,7 @@ h3 { font-size: 1rem; margin: 16px 0 8px; }
   cursor: pointer;
   min-height: 44px;
 }
-.boton-primario { background: var(--primario); color: #fff; border: 1px solid var(--primario); }
+.boton-primario { background: var(--primario); color: var(--sobre-primario); border: 1px solid var(--primario); }
 .boton-primario:hover { background: var(--primario-hover); }
 .boton-secundario { background: var(--superficie); color: var(--texto); border: 1px solid var(--borde); }
 .boton-secundario:hover { border-color: var(--primario); }
