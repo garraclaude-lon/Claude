@@ -98,10 +98,21 @@ describe('Ubicación del LED en el modelo anatómico', () => {
 
 describe('Modelo anatómico extraído', () => {
   it('tiene el sistema de conducción completo y orientación coherente', () => {
-    for (const t of ['internodal_anterior', 'internodal_medio', 'internodal_posterior', 'bachmann', 'his', 'rama_derecha', 'rama_izquierda']) {
+    for (const t of ['internodal_anterior', 'internodal_medio', 'internodal_posterior', 'bachmann', 'his', 'rama_derecha', 'rama_izquierda', 'hemirrama_anterior', 'hemirrama_posterior']) {
       expect((referencias.trayectos as Record<string, unknown[]>)[t].length).toBeGreaterThan(2);
     }
     expect(referencias.purkinje.length).toBeGreaterThanOrEqual(5);
+    // Las hemirramas nacen del final del tronco izquierdo y terminan en los papilares del VI
+    const tr = referencias.trayectos as Record<string, number[][]>;
+    const finTronco = tr.rama_izquierda[tr.rama_izquierda.length - 1];
+    const pap = referencias.papilares as Record<string, { base: number[] }>;
+    const dist = (a: number[], b: number[]) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+    expect(dist(tr.hemirrama_anterior[0], finTronco)).toBeLessThan(0.5);
+    expect(dist(tr.hemirrama_posterior[0], finTronco)).toBeLessThan(0.5);
+    expect(dist(tr.hemirrama_anterior[tr.hemirrama_anterior.length - 1], pap.vi_anterolateral.base)).toBeLessThan(0.01);
+    expect(dist(tr.hemirrama_posterior[tr.hemirrama_posterior.length - 1], pap.vi_posteromedial.base)).toBeLessThan(0.01);
+    // La rama derecha termina en el papilar anterior del VD (banda moderadora)
+    expect(dist(tr.rama_derecha[tr.rama_derecha.length - 1], pap.vd_anterior.base)).toBeLessThan(0.01);
     // Ventrículo izquierdo a la izquierda del paciente (+x); nódulo sinusal arriba del nódulo AV
     expect(referencias.centros.ventriculo_izquierdo[0]).toBeGreaterThan(referencias.centros.ventriculo_derecho[0]);
     expect(referencias.nodos.sinusal[1]).toBeGreaterThan(referencias.nodos.auriculoventricular[1]);

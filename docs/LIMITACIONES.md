@@ -24,16 +24,27 @@
    BodyParts3D). No hay un modelo pediátrico ni datos de TC o RM del paciente.
 2. **Sistema de conducción aproximado.** Los nódulos y trayectos se calcularon automáticamente
    sobre la malla: el nódulo sinusal en la unión de la vena cava superior con la AD; el AV entre el
-   ostium del seno coronario y la valva septal tricuspídea; el His hacia la cresta del septum; las
-   ramas por el septum hasta las puntas. Son ilustrativos, no anatómicamente exactos.
-3. **Anillos AV estimados.** Se ajustaron a la zona de contacto entre aurícula y ventrículo. El LED
+   ostium del seno coronario y la valva septal tricuspídea; el His hacia la cresta del septum.
+   La rama derecha baja por la cara derecha del septum y cruza por la banda moderadora hasta el
+   papilar anterior del VD. La rama izquierda es un tronco corto que se divide en la hemirrama
+   anterior (hacia el papilar anterolateral) y la posterior (hacia el posteromedial); de los
+   extremos sale la red de Purkinje. Son ilustrativos, no anatómicamente exactos.
+   No se encontró un modelo abierto de las ramas y hemirramas con licencia compatible
+   (el de Leiden-Delft-Groningen es CC BY-NC-SA), por eso se trazan por cálculo.
+3. **Válvulas AV y papilares esquemáticos.** La tricúspide (valvas septal, anterior y posterior) y
+   la mitral (anterior y posterior) se dibujan de forma minimalista sobre los anillos estimados, y
+   se abren y cierran con el ciclo. La valva septal se orienta hacia el septum y la anterior mitral
+   hacia la válvula aórtica. El atlas trae un solo papilar del VI y queda sobre la pared lateral:
+   los papilares anterolateral y posteromedial se ubican en forma esquemática según el eje corto.
+   Los papilares del VD usan la posición del atlas.
+4. **Anillos AV estimados.** Se ajustaron a la zona de contacto entre aurícula y ventrículo. El LED
    usa los mismos ángulos que el esquema 2D. Esa correspondencia debe revisarla el equipo de
    electrofisiología.
-4. **Tiempos ilustrativos.** El ciclo dura 0,75 s (unos 80 lpm). Los retrasos y el cruce por la vía
+5. **Tiempos ilustrativos.** El ciclo dura 0,75 s (unos 80 lpm). Los retrasos y el cruce por la vía
    accesoria son didácticos, no medidos.
-5. **Requiere WebGL.** En equipos sin aceleración gráfica puede ir lento; si no hay WebGL, se avisa
+6. **Requiere WebGL.** En equipos sin aceleración gráfica puede ir lento; si no hay WebGL, se avisa
    y queda el esquema 2D.
-6. **Licencia.** El modelo se distribuye bajo CC BY-SA 4.0 con atribución visible en el visor
+7. **Licencia.** El modelo se distribuye bajo CC BY-SA 4.0 con atribución visible en el visor
    (docs/LICENCIA-MODELO-3D.md). El paquete del que se obtuvo marca su propia revisión de licencias
    como "pendiente"; las licencias de origen (Z-Anatomy CC BY-SA 4.0, BodyParts3D CC BY 4.0) son
    públicas.

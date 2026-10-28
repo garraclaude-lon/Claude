@@ -337,22 +337,108 @@ const trayectos = {
   internodal_posterior: trayecto([nodoSA, V.add(medioSAAV, V.add(V.mul(post, 1.4), V.mul(lat, 0.6))), nodoAV], supAD),
   bachmann: trayecto([nodoSA, V.add(V.mul(V.add(nodoSA, centroDe('auricula_izquierda')), 0.5), [0, 1.2, 0.8]), masLejos(supAI, V.norm([0.3, 1, 0.6]))], [...supAD, ...supAI], 12),
   his: [nodoAV, V.add(V.mul(nodoAV, 0.5), V.mul(crestaSepto, 0.5)), crestaSepto, bifurcacion],
-  rama_derecha: trayecto([bifurcacion, V.add(V.mul(bifurcacion, 0.55), V.mul(puntaVD, 0.45)), puntaVD], septoVD.length > 50 ? [...septoVD, ...supVD] : supVD, 16),
-  rama_izquierda: trayecto([bifurcacion, V.add(V.mul(bifurcacion, 0.5), V.mul(puntaVI, 0.5)), puntaVI], septoVI.length > 50 ? [...septoVI, ...supVI] : supVI, 16),
 };
 
-// Purkinje: desde cada punta hacia la base por distintas paredes
+// --- Ramas del haz de His --------------------------------------------------------
+const THREE_DEG = (g) => (g * Math.PI) / 180;
+const mezcla = (a, b, t) => V.add(V.mul(a, 1 - t), V.mul(b, t));
+const recta = (a, b, n) => Array.from({ length: n + 1 }, (_, i) => mezcla(a, b, i / n));
+// Músculos papilares: base (unión con la pared, hacia la punta) y punta (hacia el anillo)
+const papilarAtlas = (n) => {
+  const ps = puntos(n);
+  const c = promedio(ps);
+  return { base: mezcla(masLejos(ps, ejeLargo), c, 0.3), punta: mezcla(masLejos(ps, V.mul(ejeLargo, -1)), c, 0.3) };
+};
+const rotar = (v, k, ang) => {
+  const c = Math.cos(ang), s = Math.sin(ang);
+  return V.add(V.add(V.mul(v, c), V.mul(V.cross(k, v), s)), V.mul(k, V.dot(k, v) * (1 - c)));
+};
+const sobreEje = (p) => V.add(MA.centro, V.mul(ejeLargo, V.dot(V.sub(p, MA.centro), ejeLargo)));
+const radial = (p) => V.sub(p, sobreEje(p));
+// Eje corto del VI: 0° = centro del septum; el signo positivo gira hacia la pared inferior.
+const nSepto = V.norm(radial(promedio(septoVI)));
+const qSepto = V.norm(V.cross(ejeLargo, nSepto));
+const anguloEC = (d) => (Math.atan2(V.dot(d, qSepto), V.dot(d, nSepto)) * 180) / Math.PI;
+const dirEC = (g) => V.add(V.mul(nSepto, Math.cos(THREE_DEG(g))), V.mul(qSepto, Math.sin(THREE_DEG(g))));
+const angAnterior = anguloEC(radial(V.add(MA.centro, [0, 0, 3])));
+const angLateral = anguloEC(radial(V.add(MA.centro, [3, 0, 0])));
+const angInferior = anguloEC(radial(V.add(MA.centro, [0, -3, 0])));
+const sentido = Math.sign(angInferior) || 1; // hacia la pared inferior
+const largoVI = V.dot(V.sub(puntaVI, MA.centro), ejeLargo);
+// El atlas trae un solo papilar del VI y queda sobre la pared lateral; los dos se ubican
+// de forma esquemática: anterolateral entre las paredes anterior y lateral, y posteromedial
+// sobre la pared inferior, cerca del septum (como en el eje corto paraesternal).
+const papilarVI = (angulo) => {
+  const nivel = V.add(MA.centro, V.mul(ejeLargo, largoVI * 0.58));
+  const d = dirEC(angulo);
+  const cerca = supVI
+    .filter((p) => Math.abs(V.dot(V.sub(p, nivel), ejeLargo)) < 0.9)
+    .filter((p) => { const r = V.norm(radial(p)); return V.dot(r, d) > Math.cos(THREE_DEG(14)); })
+    .map((p) => V.len(radial(p)))
+    .sort((x, y) => x - y);
+  const endo = cerca.length ? cerca[Math.floor(cerca.length * 0.15)] : 2;
+  const base = V.add(nivel, V.mul(d, endo * 0.9));
+  const punta = V.add(V.add(nivel, V.mul(ejeLargo, -1.8)), V.mul(d, endo * 0.55));
+  return { base, punta };
+};
+const papilares = {
+  vd_anterior: papilarAtlas('papilar_vd_anterior'),
+  vd_inferior: papilarAtlas('papilar_vd_inferior'),
+  vd_septal: papilarAtlas('papilar_vd_septal'),
+  vi_anterolateral: papilarVI(angAnterior + 0.7 * (angLateral - angAnterior)),
+  vi_posteromedial: papilarVI(sentido * Math.abs(angInferior) * 0.67),
+};
+const papilarVDAnterior = papilares.vd_anterior.base;
+const papilarVIAnterolateral = papilares.vi_anterolateral.base;
+const papilarVIPosteromedial = papilares.vi_posteromedial.base;
+
+// Rama derecha: fina, baja por la cara derecha del septum y cruza por la banda
+// moderadora (trabécula septomarginal) hasta la base del papilar anterior del VD.
+const septalVD = trayecto([bifurcacion, mezcla(bifurcacion, puntaVD, 0.3), mezcla(bifurcacion, puntaVD, 0.55)], septoVD.length > 50 ? septoVD : supVD, 10);
+trayectos.rama_derecha = [...septalVD, ...recta(septalVD[septalVD.length - 1], papilarVDAnterior, 5).slice(1)];
+
+// Rama izquierda: tronco corto y ancho sobre la cara izquierda del septum que se divide en
+// la hemirrama anterior (hacia el papilar anterolateral) y la posterior (hacia el posteromedial).
+trayectos.rama_izquierda = trayecto([bifurcacion, mezcla(bifurcacion, puntaVI, 0.2)], septoVI.length > 50 ? septoVI : supVI, 5);
+const division = trayectos.rama_izquierda[trayectos.rama_izquierda.length - 1];
+const fasciculo = (destino) => {
+  const r = trayecto([division, mezcla(mezcla(division, destino, 0.5), sobreEje(destino), -0.25), destino], [...septoVI, ...supVI], 12);
+  r[r.length - 1] = destino;
+  return r;
+};
+trayectos.hemirrama_anterior = fasciculo(papilarVIAnterolateral);
+trayectos.hemirrama_posterior = fasciculo(papilarVIPosteromedial);
+
+// Purkinje: se abre desde el final de cada fascículo y de la rama derecha por las paredes
 const purkinje = [];
-const desdePunta = (punta, superficie, centroBase, direcciones, prefijo) => {
-  direcciones.forEach((d, i) => {
-    const medio = V.add(V.mul(V.add(punta, centroBase), 0.5), V.mul(d, 2.2));
-    const alto = V.add(V.mul(V.add(punta, V.mul(centroBase, 3)), 0.25), V.mul(d, 2.8));
-    trayectos[`${prefijo}_${i}`] = trayecto([punta, medio, alto], superficie, 12);
-    purkinje.push(`${prefijo}_${i}`);
+const ramificar = (inicio, superficie, punta, prefijo) => {
+  const radial = V.norm(V.sub(inicio, sobreEje(inicio)));
+  const circ = V.norm(V.cross(ejeLargo, radial));
+  const haciaPunta = V.norm(V.sub(punta, inicio));
+  const dirs = [haciaPunta, V.norm(V.add(circ, V.mul(haciaPunta, 0.4))), V.norm(V.add(V.mul(circ, -1), V.mul(haciaPunta, 0.4)))];
+  dirs.forEach((d, i) => {
+    const nombre = `${prefijo}_${i}`;
+    trayectos[nombre] = trayecto([inicio, V.add(inicio, V.mul(d, 1.6)), V.add(inicio, V.mul(d, 3.0))], superficie, 10);
+    trayectos[nombre][0] = inicio;
+    purkinje.push(nombre);
   });
 };
-desdePunta(puntaVI, supVI, MA.centro, [[1, 0, 0.2], [0.4, 0, -1], [0.3, 0, 1], [0.9, 0, -0.6]].map(V.norm), 'purkinje_vi');
-desdePunta(puntaVD, supVD, TA.centro, [[-1, 0, 0.3], [-0.2, 0, 1], [-0.8, 0, -0.6]].map(V.norm), 'purkinje_vd');
+ramificar(papilarVIAnterolateral, supVI, puntaVI, 'purkinje_vi_ant');
+ramificar(papilarVIPosteromedial, supVI, puntaVI, 'purkinje_vi_post');
+ramificar(papilarVDAnterior, supVD, puntaVD, 'purkinje_vd');
+
+// --- Orientación de las valvas AV (ángulos en el esquema de cada anillo) ------------
+const anguloEn = (a, ejesA, p) => {
+  const d = V.sub(p, a.centro);
+  return (Math.atan2(V.dot(d, ejesA.derecha), V.dot(d, ejesA.arriba)) * 180) / Math.PI;
+};
+const centroAortico = promedio(['aortica_izquierda', 'aortica_derecha', 'aortica_no_coronaria'].flatMap(puntos));
+const orientacionValvas = {
+  // Valva septal de la tricúspide: mira hacia el septum (hacia el anillo mitral)
+  tricuspideSeptal: anguloEn(TA, ejesTA, MA.centro),
+  // Valva anterior de la mitral: en continuidad con la válvula aórtica
+  mitralAnterior: anguloEn(MA, ejesMA, centroAortico),
+};
 
 const redondear = (x) => (Array.isArray(x) ? x.map(redondear) : typeof x === 'number' ? Math.round(x * 1000) / 1000 : x);
 const referencias = redondear({
@@ -368,6 +454,8 @@ const referencias = redondear({
   puntas: { vi: puntaVI, vd: puntaVD },
   trayectos,
   purkinje,
+  valvas: orientacionValvas,
+  papilares,
   centros: Object.fromEntries(camaras.map((c) => [c, centroDe(c)])),
 });
 // El seno coronario solo se usa para ubicar la vía subepicárdica; no se exporta entero.
@@ -384,6 +472,9 @@ const buffer = doc.createBuffer();
 const escena = doc.createScene('corazon');
 let totalTri = 0;
 for (const [nombre, m] of Object.entries(mallas)) {
+  // Las válvulas mitral y tricúspide y los papilares se dibujan en la app (versión minimalista);
+  // del atlas solo se usan como referencia.
+  if (/^(tricuspide|mitral|papilar)_/.test(nombre)) continue;
   // Simplificación con meshoptimizer (conserva la forma)
   const objetivo = Math.floor((m.indices.length * m.conservar) / 3) * 3;
   const [ind] = MeshoptSimplifier.simplify(m.indices, m.posiciones, 3, objetivo, 0.004, ['LockBorder']);

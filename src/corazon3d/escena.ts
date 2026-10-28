@@ -40,7 +40,7 @@ export interface ControlEscena {
   vista(v: Vista): void;
   /** Muestra u oculta las etiquetas de referencias anatómicas (la de la vía siempre queda). */
   etiquetas(visibles: boolean): void;
-  /** Muestra u oculta las arterias coronarias derecha e izquierda. */
+  /** Muestra u oculta los vasos coronarios (arterias y venas cardíacas). */
   coronarias(visibles: boolean): void;
   destruir(): void;
 }
@@ -102,9 +102,13 @@ const TRAMOS: Tramo[] = [
   { nombre: 'internodal_posterior', inicio: 0.0, fin: 0.09, radio: 0.07 },
   { nombre: 'bachmann', inicio: 0.01, fin: 0.08, radio: 0.07 },
   { nombre: 'his', inicio: 0.17, fin: 0.2, radio: 0.16 },
-  { nombre: 'rama_derecha', inicio: 0.2, fin: 0.255, radio: 0.11 },
-  { nombre: 'rama_izquierda', inicio: 0.2, fin: 0.255, radio: 0.13 },
-  ...referencias.purkinje.map((n) => ({ nombre: n, inicio: 0.255, fin: 0.32, radio: 0.055 })),
+  // Rama derecha: fina y larga (llega a la banda moderadora)
+  { nombre: 'rama_derecha', inicio: 0.2, fin: 0.255, radio: 0.08 },
+  // Rama izquierda: tronco corto y ancho que se divide en dos hemirramas
+  { nombre: 'rama_izquierda', inicio: 0.2, fin: 0.215, radio: 0.15 },
+  { nombre: 'hemirrama_anterior', inicio: 0.215, fin: 0.255, radio: 0.085 },
+  { nombre: 'hemirrama_posterior', inicio: 0.215, fin: 0.25, radio: 0.11 },
+  ...referencias.purkinje.map((n) => ({ nombre: n, inicio: 0.255, fin: 0.32, radio: 0.05 })),
 ];
 const VIA_INICIO = 0.06;
 const VIA_FIN = 0.1;
@@ -308,6 +312,143 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
   const nodoSA = nodo(referencias.nodos.sinusal as Vec, 0.32, auriculas);
   const nodoAV = nodo(referencias.nodos.auriculoventricular as Vec, 0.28, auriculas);
 
+  // --- Válvulas AV minimalistas, papilares y cuerdas tendinosas (esquemáticos)
+  // Estilo minimalista: velo casi transparente y solo el borde libre marcado (sin brillo).
+  const matValva = registrar(new THREE.MeshStandardMaterial({
+    color: 0xd9bfb2, roughness: 0.85, metalness: 0, envMapIntensity: 0.2,
+    transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false,
+  }));
+  const matBorde = registrar(new THREE.LineBasicMaterial({ color: 0xd6bdb0, transparent: true, opacity: 0.9, depthWrite: false }));
+  const matAnillo = registrar(new THREE.MeshStandardMaterial({ color: 0xb89c90, roughness: 0.7, envMapIntensity: 0.3, transparent: true, opacity: 0.55, depthWrite: false }));
+  const matPapilar = registrar(new THREE.MeshPhysicalMaterial({
+    color: 0xb3473f, roughness: 0.45, clearcoat: 0.4, sheen: 0.3, sheenColor: new THREE.Color(0xff9a8a),
+    transparent: true, opacity: 0.7, depthWrite: false,
+  }));
+  const matCuerda = registrar(new THREE.LineBasicMaterial({ color: 0xc9b0a4, transparent: true, opacity: 0.35, depthWrite: false }));
+  const valvas = crearValvas();
+  const cuerdas = crearPapilaresYCuerdas();
+
+  function crearValvas() {
+    const U = 18, W = 6;
+    const indices: number[] = [];
+    for (let i = 0; i < U; i++)
+      for (let j = 0; j < W; j++) {
+        const a = i * (W + 1) + j, b = a + W + 1;
+        indices.push(a, b, a + 1, b, b + 1, a + 1);
+      }
+    const dir = (an: Anillo, g: number, out: THREE.Vector3) => {
+      const t = THREE.MathUtils.degToRad(g);
+      return out.copy(v3(an.arriba)).multiplyScalar(Math.cos(t)).addScaledVector(v3(an.derecha), Math.sin(t));
+    };
+    type Def = { anillo: Anillo; a0: number; a1: number; largo: number; borde: (u: number) => number[] };
+    const defs: Def[] = [];
+    // Tricúspide: tres valvas (septal, anterior y posterior) que cierran en forma de "Y"
+    const T = ANILLOS.tricuspide;
+    const s0 = referencias.valvas.tricuspideSeptal - 55, s1 = referencias.valvas.tricuspideSeptal + 55;
+    const restoA: [number, number] = [s1, s1 + 110]; // posterior o anterior según el lado
+    const restoB: [number, number] = [s1 + 110, s0 + 360];
+    const cercaDe0 = (r: [number, number]) => Math.abs(Math.cos(THREE.MathUtils.degToRad((r[0] + r[1]) / 2)) - 1);
+    const [anterior, posterior] = cercaDe0(restoB) < cercaDe0(restoA) ? [restoB, restoA] : [restoA, restoB];
+    const centroT = (g0: number, g1: number) => (u: number) => {
+      const d = dir(T, g0 + u * (g1 - g0), new THREE.Vector3());
+      return v3(T.centro).addScaledVector(d, T.radio * 0.06).toArray();
+    };
+    defs.push({ anillo: T, a0: s0, a1: s1, largo: 1.0, borde: centroT(s0, s1) });
+    defs.push({ anillo: T, a0: anterior[0], a1: anterior[1], largo: 1.3, borde: centroT(anterior[0], anterior[1]) });
+    defs.push({ anillo: T, a0: posterior[0], a1: posterior[1], largo: 1.1, borde: centroT(posterior[0], posterior[1]) });
+    // Mitral: valva anterior (en continuidad con la aórtica, ~1/3 del anillo pero más alta) y posterior
+    const M = ANILLOS.mitral;
+    const m0 = referencias.valvas.mitralAnterior - 65, m1 = referencias.valvas.mitralAnterior + 65;
+    const lineaCierre = (g: number) => v3(M.centro).addScaledVector(dir(M, g, new THREE.Vector3()), M.radio * 0.36).toArray();
+    defs.push({ anillo: M, a0: m0, a1: m1, largo: 1.7, borde: (u) => lineaCierre(m0 - u * 230) });
+    defs.push({ anillo: M, a0: m1, a1: m0 + 360, largo: 1.0, borde: (u) => lineaCierre(m1 + u * 230) });
+
+    return defs.map((d) => {
+      const n = (U + 1) * (W + 1);
+      const geo = registrar(new THREE.BufferGeometry());
+      const pos = new Float32Array(n * 3);
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setIndex(indices);
+      const malla = new THREE.Mesh(geo, matValva);
+      malla.renderOrder = 3;
+      const posBorde = new Float32Array((U + 1) * 3);
+      const geoBorde = registrar(new THREE.BufferGeometry());
+      geoBorde.setAttribute('position', new THREE.BufferAttribute(posBorde, 3));
+      const lineaBorde = new THREE.Line(geoBorde, matBorde);
+      lineaBorde.renderOrder = 4;
+      ventriculos.add(malla, lineaBorde);
+      // Precalcula los puntos del anillo y del borde de cierre
+      const C = v3(d.anillo.centro), N = v3(d.anillo.normal);
+      const anillo = Array.from({ length: U + 1 }, (_, i) => C.clone().addScaledVector(dir(d.anillo, d.a0 + (i / U) * (d.a1 - d.a0), new THREE.Vector3()), d.anillo.radio));
+      const borde = Array.from({ length: U + 1 }, (_, i) => v3(d.borde(i / U)));
+      const p = new THREE.Vector3(), cerrado = new THREE.Vector3(), abiertoP = new THREE.Vector3();
+      const actualizar = (abierto: number) => {
+        for (let i = 0; i <= U; i++)
+          for (let j = 0; j <= W; j++) {
+            const v = j / W;
+            cerrado.copy(anillo[i]).lerp(borde[i], v).addScaledVector(N, 0.3 * v);
+            abiertoP.copy(anillo[i]).lerp(C, 0.22 * v).addScaledVector(N, d.largo * v);
+            p.copy(cerrado).lerp(abiertoP, abierto);
+            pos.set([p.x, p.y, p.z], (i * (W + 1) + j) * 3);
+            if (j === W) posBorde.set([p.x, p.y, p.z], i * 3);
+          }
+        geo.attributes.position.needsUpdate = true;
+        geoBorde.attributes.position.needsUpdate = true;
+        geo.computeVertexNormals();
+      };
+      actualizar(0);
+      // Puntos del borde libre (para las cuerdas)
+      const libre = (i: number) => new THREE.Vector3().fromArray(pos, (i * (W + 1) + W) * 3);
+      return { anillo: d.anillo, actualizar, libre, U, pos, W };
+    });
+  }
+
+  function crearPapilaresYCuerdas() {
+    const PAP = referencias.papilares as Record<string, { base: number[]; punta: number[] }>;
+    const Y = new THREE.Vector3(0, 1, 0);
+    const lista: { punta: THREE.Vector3; valva: (typeof valvas)[number]; i: number }[] = [];
+    for (const [nombre, p] of Object.entries(PAP)) {
+      const base = v3(p.base), punta = v3(p.punta);
+      const eje = punta.clone().sub(base);
+      const izquierdo = nombre.startsWith('vi_');
+      const cono = new THREE.Mesh(registrar(new THREE.CylinderGeometry(izquierdo ? 0.2 : 0.13, izquierdo ? 0.5 : 0.3, eje.length(), 16, 1)), matPapilar);
+      cono.position.copy(base).add(punta).multiplyScalar(0.5);
+      cono.quaternion.setFromUnitVectors(Y, eje.normalize());
+      cono.renderOrder = 2;
+      ventriculos.add(cono);
+      // Cada papilar sostiene los bordes libres más cercanos de su válvula
+      const propias = valvas.filter((v) => v.anillo === (izquierdo ? ANILLOS.mitral : ANILLOS.tricuspide));
+      const candidatos = propias.flatMap((valva) => [3, 6, 9, 12, 15].map((i) => ({ valva, i, d: valva.libre(i).distanceTo(punta) })));
+      candidatos.sort((a, b) => a.d - b.d);
+      for (const c of candidatos.slice(0, izquierdo ? 5 : 4)) lista.push({ punta, valva: c.valva, i: c.i });
+    }
+    const pos = new Float32Array(lista.length * 6);
+    const geo = registrar(new THREE.BufferGeometry());
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const lineas = new THREE.LineSegments(geo, matCuerda);
+    lineas.renderOrder = 3;
+    ventriculos.add(lineas);
+    return () => {
+      lista.forEach((c, k) => {
+        const q = c.valva.libre(c.i);
+        pos.set([c.punta.x, c.punta.y, c.punta.z, q.x, q.y, q.z], k * 6);
+      });
+      geo.attributes.position.needsUpdate = true;
+    };
+  }
+
+  // Anillos fibrosos: un trazo fino
+  for (const an of [ANILLOS.tricuspide, ANILLOS.mitral]) {
+    const puntosAnillo = Array.from({ length: 48 }, (_, i) => {
+      const t = (i / 48) * Math.PI * 2;
+      return v3(an.centro).addScaledVector(v3(an.arriba), an.radio * Math.cos(t)).addScaledVector(v3(an.derecha), an.radio * Math.sin(t));
+    });
+    const tubo = new THREE.Mesh(registrar(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(puntosAnillo, true), 96, 0.04, 8, true)), matAnillo);
+    tubo.renderOrder = 3;
+    ventriculos.add(tubo);
+  }
+  cuerdas();
+
   // --- LED de la vía accesoria
   const leds = opciones.regiones
     .filter((c) => SEGMENTOS[c])
@@ -369,9 +510,11 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
   rotular('Nódulo sinusal', v3(referencias.nodos.sinusal).add(new THREE.Vector3(-1.2, 1.2, 0)), etConduccion);
   rotular('Nódulo AV', v3(referencias.nodos.auriculoventricular).add(new THREE.Vector3(-1.6, -0.4, 0.6)), etConduccion);
   rotular('Haz de His', medioDe('his').add(new THREE.Vector3(0, 0.9, 0.6)), etConduccion);
-  rotular('Rama derecha', medioDe('rama_derecha').add(new THREE.Vector3(-1.3, 0, 0.6)), etConduccion);
-  rotular('Rama izquierda', medioDe('rama_izquierda').add(new THREE.Vector3(1.4, 0, 0.4)), etConduccion);
-  rotular('Purkinje', medioDe('purkinje_vi_0').add(new THREE.Vector3(1.2, 0, 0)), etConduccion);
+  rotular('Rama derecha', medioDe('rama_derecha').add(new THREE.Vector3(-1.9, -0.5, 0.6)), etConduccion);
+  rotular('Rama izquierda', medioDe('rama_izquierda').add(new THREE.Vector3(1.2, 0.5, 0.4)), etConduccion);
+  rotular('Hemirrama anterior', medioDe('hemirrama_anterior').add(new THREE.Vector3(1.4, 0.4, 0.6)), etConduccion);
+  rotular('Hemirrama posterior', medioDe('hemirrama_posterior').add(new THREE.Vector3(1.3, -1.7, 0.6)), etConduccion);
+  rotular('Purkinje', medioDe('purkinje_vi_ant_0').add(new THREE.Vector3(1.2, -0.3, 0)), etConduccion);
   rotular('Tricúspide', puntoAnillo('tricuspide', 270, 1.2), etAnatomia);
   rotular('Mitral', puntoAnillo('mitral', 120, 1.4), etAnatomia);
 
@@ -591,6 +734,11 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
       l.cruce.material.opacity = enCruce ? 1 - Math.max(0, (t - VIA_FIN) / 0.04) : 0;
       l.cruce.position.copy(l.dir).multiplyScalar(-1.6 + 3.2 * c);
     }
+
+    // Válvulas AV: cerradas durante la sístole ventricular, abiertas en la diástole
+    const abierto = (1 - suave(ventana(t, 0.2, 0.26))) + suave(ventana(t, 0.55, 0.63));
+    for (const v of valvas) v.actualizar(Math.min(1, abierto));
+    cuerdas();
 
     // Latido: sístole auricular y ventricular, cada una hacia su propio centro
     const sistA = Math.sin(Math.PI * ventana(t, 0.08, 0.24)) * 0.04;
