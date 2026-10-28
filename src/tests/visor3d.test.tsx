@@ -30,7 +30,7 @@ describe('Botón 3D location', () => {
     const u = userEvent.setup();
     render(<PanelResultado resultado={aplicarArruda(e({ deltaI: 'negativa', deltaAVF: 'positiva' }))} desactualizado={false} onReiniciar={() => {}} />);
     await u.click(screen.getByRole('button', { name: '3D location' }));
-    for (const nombre of ['Referencias anatómicas', 'Arterias coronarias']) {
+    for (const nombre of ['Referencias anatómicas', 'Vasos coronarios']) {
       const boton = screen.getByRole('button', { name: nombre });
       expect(boton).toHaveAttribute('aria-pressed', 'true');
       await u.click(boton);

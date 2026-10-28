@@ -209,10 +209,17 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
   renderer.domElement.setAttribute('aria-hidden', 'true');
   contenedor.appendChild(renderer.domElement);
 
+  const capaGuia = document.createElement('div');
+  capaGuia.className = 'c3d-guia';
+  const svgGuia = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svgGuia.setAttribute('aria-hidden', 'true');
+  capaGuia.appendChild(svgGuia);
+
   const etiquetas = new CSS2DRenderer();
   etiquetas.setSize(ancho(), alto());
   etiquetas.domElement.className = 'c3d-etiquetas';
   contenedor.appendChild(etiquetas.domElement);
+  contenedor.appendChild(capaGuia);
 
   const escena = new THREE.Scene();
   const texFondo = fondo();
@@ -259,7 +266,8 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
     m.geometry.computeVertexNormals();
     m.material = registrar(material(grupo));
     m.renderOrder = grupo === 'ventriculo' || grupo === 'auricula' ? 2 : 1;
-    if (grupo === 'arteria') coronarias.push(m);
+    // Vasos coronarios: arterias y venas cardíacas (incluye el seno coronario)
+    if (grupo === 'arteria' || grupo === 'vena_cardiaca') coronarias.push(m);
     registrar(m.geometry);
     (DESTINO[grupo] ?? fijos).add(m);
   }
@@ -319,20 +327,27 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
       led.renderOrder = 10;
       halo.renderOrder = 11;
       g.add(led, halo, luz, cruce);
-      // El contenedor lo posiciona CSS2DRenderer; la etiqueta interna se corre hacia arriba en pantalla.
-      const div = document.createElement('div');
+      corazon.add(g);
+      // Etiqueta afuera de la silueta, unida al LED por una línea guía (se ubica en cada cuadro).
       const texto = document.createElement('span');
       texto.className = 'c3d-etiqueta c3d-etiqueta-via';
       texto.textContent = `Vía accesoria · ${REGIONES[c].abreviatura}`;
-      div.appendChild(texto);
-      const et = new CSS2DObject(div);
-      et.position.set(0, 0, 0);
-      g.add(et);
-      corazon.add(g);
+      const linea = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      svgGuia.appendChild(linea);
+      capaGuia.appendChild(texto);
       // Dirección del cruce: de la aurícula al ventrículo (normal del anillo)
       const anillo = SEGMENTOS[c]![0].anillo === 'm' ? ANILLOS.mitral : ANILLOS.tricuspide;
-      return { halo, luz, cruce, led, dir: v3(anillo.normal).normalize() };
+      return { halo, luz, cruce, led, texto, linea, lado: 0, dir: v3(anillo.normal).normalize() };
     });
+
+  // Puntos de muestra de la superficie para estimar la silueta en pantalla.
+  const muestras: { malla: THREE.Mesh; p: THREE.Vector3 }[] = [];
+  for (const m of mallas) {
+    const pos = m.geometry.getAttribute('position');
+    if (!pos) continue;
+    const paso = Math.max(1, Math.floor(pos.count / 120));
+    for (let i = 0; i < pos.count; i += paso) muestras.push({ malla: m, p: new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i)) });
+  }
 
   // --- Etiquetas
   const etConduccion: HTMLElement[] = [];
@@ -410,7 +425,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
     vistaActual = v;
     quatObjetivo.copy(v === 'frontal' ? QUAT_FRONTAL : v === 'via' ? QUAT_VIA : QUAT_ANILLOS);
     pivoteObjetivo.copy(v === 'anillos' ? centroAnillos : new THREE.Vector3(0, 1.6, 0));
-    const cerca = ancho() < 520 ? 0.84 : 1; // en el celular el corazón se ve más grande
+    const cerca = ancho() < 520 ? 0.95 : 1; // en el celular, algo más cerca pero con lugar para la etiqueta
     camara.position.set(0, 0, distancia(v === 'anillos' ? 30 : 37) * cerca);
     controles.target.set(0, 0, 0);
     controles.update();
@@ -424,6 +439,100 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
   }
   corazon.quaternion.copy(QUAT_VIA);
   vista('via');
+
+  // --- Llamada de la vía: etiqueta afuera de la silueta y línea hasta casi el LED
+  const tmp = new THREE.Vector3();
+  const aPantalla = (v: THREE.Vector3, w: number, h: number) => {
+    tmp.copy(v).project(camara);
+    return { x: ((tmp.x + 1) / 2) * w, y: ((1 - tmp.y) / 2) * h };
+  };
+  const puntosPantalla: { x: number; y: number }[] = [];
+  function ubicarLlamadas() {
+    if (leds.length === 0) return;
+    const w = ancho();
+    const h = alto();
+    // Silueta proyectada (solo lo visible)
+    puntosPantalla.length = 0;
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const mu of muestras) {
+      if (!mu.malla.visible) continue;
+      const q = aPantalla(tmp.copy(mu.p).applyMatrix4(mu.malla.matrixWorld), w, h);
+      puntosPantalla.push(q);
+      x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y);
+    }
+    const cx = (x0 + x1) / 2;
+    const cy = (y0 + y1) / 2;
+    const radio = Math.max(x1 - x0, y1 - y0) / 2;
+    const margen = 8;
+    const ocupadas: { x: number; y: number; w: number; h: number }[] = [];
+    for (const l of leds) {
+      const p = aPantalla(l.led.getWorldPosition(new THREE.Vector3()), w, h);
+      let dx = p.x - cx;
+      let dy = p.y - cy;
+      const largo = Math.hypot(dx, dy);
+      if (largo < 1) { dx = 0; dy = -1; } else { dx /= largo; dy /= largo; }
+      // Borde de la silueta en esa dirección: lo más lejano dentro de una franja alrededor del rayo
+      const franja = radio * 0.18;
+      let borde = 0;
+      for (const q of puntosPantalla) {
+        const ax = q.x - cx, ay = q.y - cy;
+        const a = ax * dx + ay * dy;
+        if (a > borde && Math.abs(ax * dy - ay * dx) < franja) borde = a;
+      }
+      borde = Math.max(borde, largo);
+      const ew = l.texto.offsetWidth || 120;
+      const eh = l.texto.offsetHeight || 20;
+      const separacion = w < 520 ? 16 : 30;
+      const limitar = (x: number, y: number) => ({
+        x: Math.min(Math.max(x, margen), w - ew - margen),
+        y: Math.min(Math.max(y, margen), h - eh - margen),
+      });
+      // Candidatas: en la dirección del LED y, si no cabe afuera, arriba, abajo o a los costados.
+      const ancla = { x: cx + dx * (borde + separacion), y: cy + dy * (borde + separacion) };
+      const candidatas = [
+        limitar(ancla.x + dx * (ew / 2) - ew / 2, ancla.y + dy * (eh / 2) - eh / 2),
+        limitar(p.x - ew / 2, y1 + separacion),
+        limitar(p.x - ew / 2, y0 - separacion - eh),
+        limitar(x0 - separacion - ew, p.y - eh / 2),
+        limitar(x1 + separacion, p.y - eh / 2),
+      ];
+      // Se elige la que menos tapa el corazón y otras etiquetas; a igualdad, la más cercana al LED.
+      const tapa = (c: { x: number; y: number }) => {
+        let n = 0;
+        for (const q of puntosPantalla) if (q.x > c.x - 4 && q.x < c.x + ew + 4 && q.y > c.y - 4 && q.y < c.y + eh + 4) n++;
+        for (const o of ocupadas) if (c.x < o.x + o.w + 6 && c.x + ew + 6 > o.x && c.y < o.y + o.h + 6 && c.y + eh + 6 > o.y) n += 1000;
+        return n;
+      };
+      const costos = candidatas.map((c, i) => {
+        const d = Math.hypot(c.x + ew / 2 - p.x, c.y + eh / 2 - p.y);
+        // Leve preferencia por la dirección natural (la primera)
+        return tapa(c) * 1e4 + d + (i === 0 ? 0 : 40);
+      });
+      let elegida = costos.indexOf(Math.min(...costos));
+      // Inercia: solo cambia de lado si la nueva posición es claramente mejor (evita saltos al girar)
+      if (costos[l.lado] !== undefined && costos[l.lado] <= costos[elegida] * 1.25 + 30) elegida = l.lado;
+      l.lado = elegida;
+      const bx = candidatas[elegida].x;
+      const by = candidatas[elegida].y;
+      ocupadas.push({ x: bx, y: by, w: ew, h: eh });
+      l.texto.style.transform = `translate(${bx.toFixed(1)}px, ${by.toFixed(1)}px)`;
+      // Línea: desde el borde de la etiqueta más cercano al LED hasta casi el LED
+      const sx = Math.min(Math.max(p.x, bx), bx + ew);
+      const sy = Math.min(Math.max(p.y, by), by + eh);
+      const lx = p.x - sx, ly = p.y - sy;
+      const ll = Math.hypot(lx, ly);
+      const hueco = 9;
+      const visible = ll > hueco + 4;
+      l.linea.style.display = visible ? '' : 'none';
+      if (visible) {
+        const k = (ll - hueco) / ll;
+        l.linea.setAttribute('x1', sx.toFixed(1));
+        l.linea.setAttribute('y1', sy.toFixed(1));
+        l.linea.setAttribute('x2', (sx + lx * k).toFixed(1));
+        l.linea.setAttribute('y2', (sy + ly * k).toFixed(1));
+      }
+    }
+  }
 
   // --- Animación
   let pausado = opciones.pausado;
@@ -491,6 +600,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
     controles.update();
     composer.render();
     etiquetas.render(escena, camara);
+    ubicarLlamadas();
   };
   cuadro = requestAnimationFrame(animar);
 
@@ -525,6 +635,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
       // Primero se quita lo visible; después se libera memoria (un error ahí no deja restos en pantalla).
       renderer.domElement.remove();
       etiquetas.domElement.remove();
+      capaGuia.remove();
       observador.disconnect();
       for (const d of [controles, ...desechables, renderer]) {
         try {

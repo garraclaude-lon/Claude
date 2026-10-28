@@ -130,16 +130,11 @@ export function Visor3D({ regiones, onCerrar }: Props) {
             </button>
             <button type="button" className="interruptor" aria-pressed={coronarias} onClick={() => setCoronarias((v) => !v)}>
               <span className="interruptor-pista" aria-hidden="true"><span /></span>
-              Arterias coronarias
+              Vasos coronarios
             </button>
           </div>
         </div>
 
-        <ul className="modal-3d-leyenda">
-          <li><i className="ley-led" aria-hidden="true" /> Vía accesoria (LED rojo)</li>
-          <li><i className="ley-conduccion" aria-hidden="true" /> Sistema de conducción</li>
-          <li><i className="ley-cruce" aria-hidden="true" /> Preexcitación: el impulso cruza por la vía antes que por el His</li>
-        </ul>
         <p className="modal-3d-nota">
           Modelo anatómico de un adulto de referencia, no del paciente; el sistema de conducción está
           trazado de forma aproximada. La ubicación es la predicción del algoritmo, no una localización
