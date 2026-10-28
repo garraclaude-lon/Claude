@@ -85,6 +85,19 @@ function lectorCon(deteccion: DeteccionPrivacidad | (() => Promise<DeteccionPriv
   return { lector, leer, detectarDatosPersonales };
 }
 
+/** A partir de la próxima llamada, la revisión responde en este orden (true = hay datos). */
+function detectarSecuencia(lector: LectorIA, hay: boolean[]) {
+  const f = lector.detectarDatosPersonales as ReturnType<typeof vi.fn>;
+  const original = f.getMockImplementation();
+  let llamada = 0;
+  f.mockImplementation(async (...args: unknown[]) => {
+    llamada++;
+    if (llamada === 1 && original) return original(...args);
+    const h = hay[Math.min(llamada - 2, hay.length - 1)];
+    return { hayDatosPersonales: h, zonas: h ? [{ tipo: 'nombre', x: 0, y: 0, ancho: 0.2, alto: 0.05 }] : [] };
+  });
+}
+
 async function subir(u: ReturnType<typeof userEvent.setup>) {
   await u.upload(screen.getByTestId('input-archivo'), archivo);
 }
@@ -94,6 +107,8 @@ describe('Datos personales en la imagen', () => {
     const u = userEvent.setup();
     const editor = editorFalso();
     const { lector, leer } = lectorCon({ hayDatosPersonales: true, zonas: [{ tipo: 'nombre', x: 0.05, y: 0.02, ancho: 0.3, alto: 0.04 }, { tipo: 'documento', x: 0.5, y: 0.02, ancho: 0.2, alto: 0.04 }] });
+    // Después de recortar, la nueva revisión ya no encuentra datos.
+    detectarSecuencia(lector, [false]);
     render(<ModoImagen onSalir={() => {}} obtenerLector={async () => lector} preparar={preparar} editor={editor} />);
     await subir(u);
 
@@ -117,9 +132,10 @@ describe('Datos personales en la imagen', () => {
     await u.click(screen.getByRole('radio', { name: 'Masculino' }));
     await u.type(screen.getByLabelText('Años'), '5');
     await u.click(screen.getByRole('button', { name: 'Continuar' }));
-    await u.click(screen.getByRole('checkbox', { name: /no contiene datos identificables/ }));
     await u.click(screen.getByRole('button', { name: 'Pedir propuesta a la IA' }));
     await waitFor(() => expect(leer).toHaveBeenCalledWith(anonima, expect.anything()));
+    // La revisión de control se hizo sobre la imagen anonimizada.
+    expect(lector.detectarDatosPersonales).toHaveBeenLastCalledWith(anonima, expect.anything());
   });
 
   it('si el dato está en medio del trazado, oculta la zona en lugar de recortar', async () => {
@@ -176,9 +192,48 @@ describe('Datos personales en la imagen', () => {
     await u.click(screen.getByRole('radio', { name: 'Femenino' }));
     await u.type(screen.getByLabelText('Años'), '2');
     await u.click(screen.getByRole('button', { name: 'Continuar' }));
-    await u.click(screen.getByRole('checkbox', { name: /no contiene datos identificables/ }));
     expect(screen.getByRole('button', { name: 'Pedir propuesta a la IA' })).toBeDisabled();
     terminar({ hayDatosPersonales: false, zonas: [] });
     await waitFor(() => expect(screen.getByRole('button', { name: 'Pedir propuesta a la IA' })).toBeEnabled());
+  });
+
+  it('si al seguir todavía detecta datos personales, no avanza y muestra el aviso', async () => {
+    const u = userEvent.setup();
+    const { lector, leer } = lectorCon(() => Promise.reject({ code: 'upstream_error' }));
+    render(<ModoImagen onSalir={() => {}} obtenerLector={async () => lector} preparar={preparar} editor={editorFalso()} />);
+    await subir(u);
+    expect(await screen.findByTestId('estado-privacidad')).toHaveTextContent('No se pudo confirmar automáticamente');
+    // La segunda revisión (al querer seguir) encuentra un nombre.
+    (lector.detectarDatosPersonales as ReturnType<typeof vi.fn>).mockImplementation(async () => ({ hayDatosPersonales: true, zonas: [{ tipo: 'nombre', x: 0, y: 0, ancho: 0.2, alto: 0.05 }] }));
+    await u.click(screen.getByRole('radio', { name: 'Femenino' }));
+    await u.type(screen.getByLabelText('Años'), '3');
+    await u.click(screen.getByRole('button', { name: 'Continuar' }));
+
+    await u.click(screen.getByRole('button', { name: 'Pedir propuesta a la IA' }));
+    const aviso = await screen.findByTestId('bloqueo-datos');
+    expect(within(aviso).getByRole('alertdialog')).toHaveTextContent('No puedo continuar porque contiene datos personales del paciente.');
+    expect(leer).not.toHaveBeenCalled();
+    await u.click(within(aviso).getByRole('button', { name: 'Cerrar' }));
+
+    await u.click(screen.getByRole('button', { name: 'Revisar sin IA' }));
+    const aviso2 = await screen.findByTestId('bloqueo-datos');
+    expect(screen.queryByTestId('pregunta')).not.toBeInTheDocument();
+    // Desde el aviso se puede ir directo a tapar a mano.
+    await u.click(within(aviso2).getByRole('button', { name: 'Tapar una zona a mano' }));
+    expect(screen.queryByTestId('bloqueo-datos')).not.toBeInTheDocument();
+  });
+
+  it('si la imagen ya dio limpia, avanza sin volver a revisarla', async () => {
+    const u = userEvent.setup();
+    const { lector, detectarDatosPersonales } = lectorCon({ hayDatosPersonales: false, zonas: [] });
+    render(<ModoImagen onSalir={() => {}} obtenerLector={async () => lector} preparar={preparar} editor={editorFalso()} />);
+    await subir(u);
+    await screen.findByText('No se detectaron datos personales en la imagen.');
+    await u.click(screen.getByRole('radio', { name: 'Masculino' }));
+    await u.type(screen.getByLabelText('Años'), '1');
+    await u.click(screen.getByRole('button', { name: 'Continuar' }));
+    await u.click(screen.getByRole('button', { name: 'Revisar sin IA' }));
+    expect(await screen.findByTestId('pregunta')).toBeInTheDocument();
+    expect(detectarDatosPersonales).toHaveBeenCalledTimes(1);
   });
 });

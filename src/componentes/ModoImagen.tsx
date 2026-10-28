@@ -53,7 +53,11 @@ export function ModoImagen({
   const [error, setError] = useState<string | null>(null);
   const [lector, setLector] = useState<LectorIA | null>(null);
   const [estadoLector, setEstadoLector] = useState<EstadoLector>('comprobando');
-  const [sinDatosPersonales, setSinDatosPersonales] = useState(false);
+  /** Ventana que frena el avance porque se detectaron datos personales. */
+  const [bloqueado, setBloqueado] = useState(false);
+  const [verificando, setVerificando] = useState(false);
+  /** Última versión de la imagen que la revisión dio por limpia. */
+  const imagenLimpia = useRef<Blob | null>(null);
   const [propuesta, setPropuesta] = useState<PropuestaIA | null>(null);
   const [paciente, setPaciente] = useState<DatosPaciente | null>(null);
   const control = useRef<AbortController | null>(null);
@@ -106,6 +110,7 @@ export function ModoImagen({
           setPrivacidad('no_verificada');
           setTapando(true);
         } else {
+          imagenLimpia.current = imagen.blob;
           setPrivacidad('limpia');
         }
       })
@@ -146,7 +151,6 @@ export function ModoImagen({
       setPrivacidad('anonimizada');
       setDeteccion(null);
       setTapando(false);
-      setSinDatosPersonales(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo anonimizar la imagen.');
     } finally {
@@ -175,6 +179,33 @@ export function ModoImagen({
     }
   };
 
+  /**
+   * Antes de pasar al siguiente paso se vuelve a revisar la imagen (salvo que esta
+   * misma versión ya haya dado limpia). Si todavía hay datos personales, no se avanza.
+   */
+  const verificarYSeguir = async (siguiente: () => void) => {
+    if (!imagen) return;
+    if (!lector?.detectarDatosPersonales || imagenLimpia.current === imagen.blob) return siguiente();
+    const ctl = new AbortController();
+    control.current = ctl;
+    setVerificando(true);
+    try {
+      const d = await lector.detectarDatosPersonales(imagen.blob, ctl.signal);
+      if (ctl.signal.aborted) return;
+      if (d.hayDatosPersonales) {
+        setBloqueado(true);
+        return;
+      }
+      imagenLimpia.current = imagen.blob;
+    } catch (e) {
+      if (ctl.signal.aborted) return;
+      // Si la revisión no responde, se sigue: el aviso pide revisar y tapar a mano.
+    } finally {
+      setVerificando(false);
+    }
+    siguiente();
+  };
+
   const pedirIA = async () => {
     if (!lector || !imagen) return;
     const ctl = new AbortController();
@@ -199,7 +230,7 @@ export function ModoImagen({
     setTapando(false);
     setImagen(null);
     setPropuesta(null);
-    setSinDatosPersonales(false);
+    setBloqueado(false);
     setError(null);
     setFase('cargar');
   };
@@ -220,10 +251,25 @@ export function ModoImagen({
       {imagen.nota && <p className="nota">{imagen.nota}</p>}
       <EstadoPrivacidad estado={deteccion ? 'detectada' : privacidad} detalle={anonimizacion} />
       {!tapando && !revisionPendiente && (
-        <button type="button" className="boton-texto boton-tapar" onClick={() => setTapando(true)}>
+        <button type="button" className="boton-volumen boton-tapar" onClick={() => setTapando(true)}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <rect x="6" y="8" width="7" height="4" rx="1" fill="currentColor" />
+          </svg>
           Tapar una zona a mano
         </button>
       )}
+      {bloqueado &&
+        createPortal(
+          <BloqueoDatosPersonales
+            onTapar={() => {
+              setBloqueado(false);
+              setTapando(true);
+            }}
+            onCerrar={() => setBloqueado(false)}
+          />,
+          document.body,
+        )}
       {deteccion &&
         createPortal(
           <AlertaPrivacidad
@@ -337,15 +383,6 @@ export function ModoImagen({
                   Claude propone qué ve en cada derivación. Es una ayuda sin validar: después vas a
                   revisar y confirmar cada dato. La imagen se envía a Claude con tu cuenta y consume tu uso.
                 </p>
-                <label className="casilla">
-                  <input
-                    type="checkbox"
-                    checked={sinDatosPersonales}
-                    onChange={(e) => setSinDatosPersonales(e.target.checked)}
-                    disabled={fase === 'leyendo'}
-                  />
-                  Confirmo que la imagen no contiene datos identificables del paciente.
-                </label>
                 {revisionPendiente && (
                   <p className="nota" role="status">La lectura se habilita cuando termine la revisión de datos personales.</p>
                 )}
@@ -357,8 +394,8 @@ export function ModoImagen({
                     </button>
                   </div>
                 ) : (
-                  <button type="button" className="boton-primario" disabled={!sinDatosPersonales || revisionPendiente || tapando} onClick={pedirIA}>
-                    Pedir propuesta a la IA
+                  <button type="button" className="boton-primario" disabled={revisionPendiente || tapando || verificando} onClick={() => verificarYSeguir(pedirIA)}>
+                    {verificando ? 'Revisando la imagen…' : 'Pedir propuesta a la IA'}
                   </button>
                 )}
               </>
@@ -369,8 +406,8 @@ export function ModoImagen({
             <button
               type="button"
               className={estadoLector === 'disponible' ? 'boton-secundario' : 'boton-primario'}
-              onClick={() => setFase('revision')}
-              disabled={fase === 'leyendo' || deteccion !== null || tapando}
+              onClick={() => verificarYSeguir(() => setFase('revision'))}
+              disabled={fase === 'leyendo' || deteccion !== null || tapando || verificando}
             >
               Revisar sin IA
             </button>
@@ -414,5 +451,42 @@ function EstadoPrivacidad({ estado, detalle }: { estado: EstadoPrivacidad | 'det
       {t.texto}
       {estado === 'anonimizada' && detalle ? `: ${detalle}.` : ''}
     </p>
+  );
+}
+
+/** Ventana chica que impide seguir mientras la imagen tenga datos personales. */
+function BloqueoDatosPersonales({ onTapar, onCerrar }: { onTapar: () => void; onCerrar: () => void }) {
+  const primario = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    primario.current?.focus();
+    const alTeclear = (e: KeyboardEvent) => e.key === 'Escape' && onCerrar();
+    window.addEventListener('keydown', alTeclear);
+    const raiz = document.getElementById('root');
+    raiz?.setAttribute('inert', '');
+    return () => {
+      window.removeEventListener('keydown', alTeclear);
+      raiz?.removeAttribute('inert');
+    };
+  }, [onCerrar]);
+  return (
+    <div className="modal-fondo" data-testid="bloqueo-datos">
+      <div className="modal-alerta modal-alerta-chica" role="alertdialog" aria-modal="true" aria-labelledby="bloqueo-datos-texto">
+        <div className="modal-alerta-icono" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M5.6 5.6l12.8 12.8" />
+          </svg>
+        </div>
+        <h2 id="bloqueo-datos-texto">No puedo continuar porque contiene datos personales del paciente.</h2>
+        <div className="modal-alerta-acciones">
+          <button ref={primario} type="button" className="boton-peligro" onClick={onTapar}>
+            Tapar una zona a mano
+          </button>
+          <button type="button" className="boton-secundario" onClick={onCerrar}>
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

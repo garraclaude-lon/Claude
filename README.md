@@ -67,7 +67,7 @@ seguir. También se puede tapar cualquier zona a mano. Detalles y límites en
 
 - Solo funciona en la versión publicada en claude.ai: usa la cuenta de Claude de quien la abre,
   con su permiso. Al ejecutarla en local (`npm run dev`) la app lo indica y sigue sin IA.
-- Antes de enviar la imagen hay que confirmar que no contiene datos identificables.
+- Antes de pasar al siguiente paso (lectura con IA o revisión guiada), la app vuelve a revisar la imagen. Si todavía detecta datos personales, no deja seguir y muestra "No puedo continuar porque contiene datos personales del paciente."
 - La respuesta se valida: cualquier valor fuera de las opciones permitidas se descarta.
 
 ## Cómo ejecutarla

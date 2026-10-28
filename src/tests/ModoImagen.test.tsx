@@ -33,7 +33,7 @@ describe('Modo imagen', () => {
     expect(screen.getByRole('img', { name: /ecg.png/ })).toBeInTheDocument();
   });
 
-  it('exige confirmar que no hay datos identificables antes de llamar a la IA', async () => {
+  it('llama a la IA sin pedir confirmación manual', async () => {
     const u = userEvent.setup();
     const leer = vi.fn(async () => ({
       valores: { ...ENTRADA_VACIA, deltaI: 'negativa' as const },
@@ -47,10 +47,8 @@ describe('Modo imagen', () => {
     render(<ModoImagen onSalir={() => {}} obtenerLector={conIA} preparar={preparar} />);
     await u.upload(screen.getByTestId('input-archivo'), archivo);
     await llenarPaciente(u);
-    const boton = await screen.findByRole('button', { name: 'Pedir propuesta a la IA' });
-    expect(boton).toBeDisabled();
-    await u.click(screen.getByRole('checkbox', { name: /no contiene datos identificables/ }));
-    await u.click(boton);
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    await u.click(await screen.findByRole('button', { name: 'Pedir propuesta a la IA' }));
     await waitFor(() => expect(leer).toHaveBeenCalledTimes(1));
     expect(await screen.findByTestId('pregunta')).toHaveTextContent('La IA sugiere: negativa');
     expect(screen.getByText(/Trazado algo borroso/)).toBeInTheDocument();
@@ -62,8 +60,7 @@ describe('Modo imagen', () => {
     render(<ModoImagen onSalir={() => {}} obtenerLector={async () => lector} preparar={preparar} />);
     await u.upload(screen.getByTestId('input-archivo'), archivo);
     await llenarPaciente(u);
-    await u.click(await screen.findByRole('checkbox'));
-    await u.click(screen.getByRole('button', { name: 'Pedir propuesta a la IA' }));
+    await u.click(await screen.findByRole('button', { name: 'Pedir propuesta a la IA' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('límite de uso');
     expect(screen.getByRole('button', { name: 'Revisar sin IA' })).toBeEnabled();
   });

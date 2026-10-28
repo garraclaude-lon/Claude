@@ -640,7 +640,35 @@ main { display: grid; gap: 20px; }
 .estado-privacidad-revisando::before { background: var(--primario); animation: latido 1.2s ease-in-out infinite; }
 @keyframes latido { 50% { opacity: 0.3; } }
 @media (prefers-reduced-motion: reduce) { .estado-privacidad-revisando::before { animation: none; } }
-.boton-tapar { justify-self: start; min-height: 32px; padding: 0; font-size: 0.86rem; }
+.boton-tapar { justify-self: start; }
+/* Botón con volumen (tipo 3D): canto inferior y sombra; se hunde al presionarlo */
+.boton-volumen {
+  display: inline-flex; align-items: center; gap: 9px; min-height: 44px; padding: 10px 20px 10px 16px;
+  border: 1px solid rgb(0 0 0 / 0.08); border-radius: var(--pildora); cursor: pointer;
+  font: inherit; font-size: 0.92rem; font-weight: 600; letter-spacing: -0.01em; color: var(--primario);
+  background: linear-gradient(180deg, #ffffff 0%, #eef0f4 100%);
+  box-shadow: 0 4px 0 #c9ccd3, 0 8px 18px rgb(0 0 0 / 0.14), inset 0 1px 0 #fff;
+  transform: translateY(0); transition: transform 0.08s, box-shadow 0.08s;
+}
+.boton-volumen:hover { background: linear-gradient(180deg, #ffffff 0%, #e6e9ef 100%); }
+.boton-volumen:active { transform: translateY(3px); box-shadow: 0 1px 0 #c9ccd3, 0 3px 8px rgb(0 0 0 / 0.14), inset 0 1px 0 #fff; }
+.boton-volumen:focus-visible { outline: 3px solid rgb(0 113 227 / 0.45); outline-offset: 3px; }
+:root[data-theme="dark"] .boton-volumen {
+  border-color: rgb(255 255 255 / 0.08); color: #4da3ff;
+  background: linear-gradient(180deg, #3a3a3e 0%, #26262a 100%);
+  box-shadow: 0 4px 0 #111114, 0 8px 18px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.12);
+}
+:root[data-theme="dark"] .boton-volumen:active { box-shadow: 0 1px 0 #111114, 0 3px 8px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.12); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .boton-volumen {
+    border-color: rgb(255 255 255 / 0.08); color: #4da3ff;
+    background: linear-gradient(180deg, #3a3a3e 0%, #26262a 100%);
+    box-shadow: 0 4px 0 #111114, 0 8px 18px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.12);
+  }
+  :root:not([data-theme="light"]) .boton-volumen:active { box-shadow: 0 1px 0 #111114, 0 3px 8px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.12); }
+}
+.modal-alerta-chica { max-width: 380px; }
+.modal-alerta-chica h2 { font-size: 1.05rem; line-height: 1.35; }
 
 .tapar-zonas { display: grid; gap: 10px; }
 .tapar-zonas .nota { margin: 0; }
