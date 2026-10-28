@@ -137,14 +137,14 @@ main { display: grid; gap: 20px; }
   padding-block: 22px 18px; margin-bottom: 18px;
 }
 .marca {
-  flex: none; display: grid; place-items: center; width: 48px; height: 48px; padding: 0;
-  border: none; border-radius: 13px; cursor: pointer; color: #fff;
+  flex: none; display: grid; place-items: center; width: 54px; height: 54px; padding: 0;
+  border: none; border-radius: 15px; cursor: pointer; color: #fff;
   background: linear-gradient(160deg, #3a9bff, #0060d6);
   box-shadow: 0 1px 1px rgb(0 0 0 / 0.08), 0 4px 12px rgb(0 113 227 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.35);
   transition: transform 0.15s;
 }
 .marca:active { transform: scale(0.95); }
-.marca-icono { width: 34px; height: 20px; }
+.marca-icono { width: 44px; height: 26px; }
 .encabezado-textos { min-width: 0; }
 .encabezado h1 { margin: 0; font-size: 1.4rem; font-weight: 700; letter-spacing: -0.025em; line-height: 1.2; }
 .encabezado .by { font-weight: 400; color: var(--texto-tenue); font-size: 0.95rem; letter-spacing: 0; }

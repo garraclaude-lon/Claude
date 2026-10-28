@@ -16,14 +16,19 @@ const base = {
   'aria-hidden': true,
 };
 
-/** Complejo QRS con onda delta (empastamiento inicial). Marca de la app. */
+/**
+ * Marca de la app: latido con patrón de preexcitación ventricular.
+ * Onda P visible, PR corto, onda delta (empastamiento inicial lento), QRS
+ * ancho y trastorno secundario de la repolarización (ST descendido y T
+ * negativa, discordante con el QRS).
+ */
 export function Marca({ className }: P) {
   return (
     <svg className={className} viewBox="0 0 48 28" width="48" height="28" fill="none" aria-hidden="true">
       <path
-        d="M1 19h8c1.5-3 3.5-3 5 0h2c2.2-.4 3.8-2.4 5-5.5L24 3l3 22 2.4-6H33c2-5.5 6.5-5.5 8.5 0H47"
+        d="M1 18H4.2C5.8 18 6.4 10.8 8.4 10.8S11 18 12.4 18C14.4 17.7 16.3 15.6 18 11.2L20.2 2.5L23.4 21.4L25 18.4C26.1 18.6 27 19.2 28 20C29.8 21.6 31 24.8 33.4 24.8C35.6 24.8 36.6 20.6 38.8 18.4C39.4 18.1 40 18 40.7 18H47"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="2.1"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
