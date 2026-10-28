@@ -3,22 +3,61 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../App';
 
-async function elegir(usuario: ReturnType<typeof userEvent.setup>, campo: string, opcion: string) {
+type Usuario = ReturnType<typeof userEvent.setup>;
+
+async function elegir(usuario: Usuario, campo: string, opcion: string) {
   const grupo = screen.getByRole('group', { name: campo });
   await usuario.click(within(grupo).getByRole('radio', { name: opcion }));
 }
 
-describe('Interfaz', () => {
-  it('muestra encabezado, subtítulo y aviso de prototipo', () => {
-    render(<App />);
+async function abrirFormulario(u: Usuario) {
+  await u.click(screen.getByRole('button', { name: /Cuestionario guiado/ }));
+  await u.click(screen.getByRole('button', { name: 'Usar el formulario completo' }));
+}
+
+// Sin IA: el modo imagen no la necesita para estas pruebas.
+const sinIA = async () => null;
+
+describe('Pantalla de inicio', () => {
+  it('muestra encabezado, aviso y las dos versiones', () => {
+    render(<App obtenerLector={sinIA} />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('WPW Navigator 3D by Longa');
     expect(screen.getByText('Localización de vías accesorias — Algoritmo de Arruda')).toBeInTheDocument();
     expect(screen.getByText(/Prototipo de investigación/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Desde la imagen del ECG/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Cuestionario guiado/ })).toBeInTheDocument();
   });
 
+  it('el cuestionario guiado empieza por la onda delta en I', async () => {
+    const u = userEvent.setup();
+    render(<App obtenerLector={sinIA} />);
+    await u.click(screen.getByRole('button', { name: /Cuestionario guiado/ }));
+    expect(screen.getByTestId('pregunta')).toHaveTextContent('onda delta en I ');
+  });
+
+  it('la versión simple ofrece cámara y carga de archivo', async () => {
+    const u = userEvent.setup();
+    render(<App obtenerLector={sinIA} />);
+    await u.click(screen.getByRole('button', { name: /Desde la imagen del ECG/ }));
+    expect(screen.getByTestId('input-camara')).toHaveAttribute('capture', 'environment');
+    expect(screen.getByTestId('input-archivo').getAttribute('accept')).toContain('.bmp');
+    expect(screen.getByTestId('input-archivo').getAttribute('accept')).toContain('.pdf');
+  });
+
+  it('volver al inicio desde cada modo', async () => {
+    const u = userEvent.setup();
+    render(<App obtenerLector={sinIA} />);
+    await u.click(screen.getByRole('button', { name: /Desde la imagen del ECG/ }));
+    await u.click(screen.getByRole('button', { name: 'Volver al inicio' }));
+    expect(screen.getByRole('heading', { name: '¿Cómo querés trabajar?' })).toBeInTheDocument();
+  });
+});
+
+describe('Formulario completo', () => {
   it('calcula LL/LAL y la ruta mostrada coincide con el resultado', async () => {
     const u = userEvent.setup();
-    render(<App />);
+    render(<App obtenerLector={sinIA} />);
+    await abrirFormulario(u);
     await elegir(u, 'Onda delta en I', 'Negativa');
     await elegir(u, 'Onda delta en aVF', 'Positiva');
     await u.click(screen.getByRole('button', { name: 'Calcular localización' }));
@@ -38,7 +77,8 @@ describe('Interfaz', () => {
 
   it('con el formulario vacío pide los datos faltantes del paso 1', async () => {
     const u = userEvent.setup();
-    render(<App />);
+    render(<App obtenerLector={sinIA} />);
+    await abrirFormulario(u);
     await u.click(screen.getByRole('button', { name: 'Calcular localización' }));
     const panel = screen.getByTestId('panel-resultado');
     expect(within(panel).getByTestId('estado')).toHaveTextContent('Datos insuficientes');
@@ -50,7 +90,8 @@ describe('Interfaz', () => {
 
   it('avisa si se modifican los datos después de calcular', async () => {
     const u = userEvent.setup();
-    render(<App />);
+    render(<App obtenerLector={sinIA} />);
+    await abrirFormulario(u);
     await elegir(u, 'Onda delta en I', 'Negativa');
     await elegir(u, 'Onda delta en aVF', 'Positiva');
     await u.click(screen.getByRole('button', { name: 'Calcular localización' }));
@@ -63,7 +104,8 @@ describe('Interfaz', () => {
 
   it('reiniciar limpia el formulario y el resultado', async () => {
     const u = userEvent.setup();
-    render(<App />);
+    render(<App obtenerLector={sinIA} />);
+    await abrirFormulario(u);
     await elegir(u, 'Onda delta en I', 'Negativa');
     await u.click(screen.getByRole('button', { name: 'Calcular localización' }));
     await u.click(screen.getByRole('button', { name: 'Reiniciar formulario' }));

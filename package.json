@@ -1,7 +1,7 @@
 {
   "name": "wpw-navigator-3d",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Prototipo de investigación: localización de vías accesorias en WPW con el algoritmo de Arruda (1998).",
   "type": "module",
   "scripts": {
@@ -10,16 +10,18 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:artefacto": "tsc -b && vite build --mode artefacto && node scripts/empaquetar-artefacto.mjs"
   },
   "dependencies": {
+    "pdfjs-dist": "4.10.38",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@testing-library/dom": "10.4.0",
     "@testing-library/jest-dom": "6.6.3",
     "@testing-library/react": "16.0.1",
-    "@testing-library/dom": "10.4.0",
     "@testing-library/user-event": "14.5.2",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",

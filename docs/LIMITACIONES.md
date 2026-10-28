@@ -18,11 +18,32 @@
 7. **Definición de isoeléctrica.** La herramienta no mide el ECG: depende de que el usuario
    evalúe correctamente los primeros 20 ms. No hay ayuda visual ni umbrales de amplitud.
 
+## Lectura automática con IA (experimental)
+
+1. **No está validada.** Nadie midió su exactitud para leer la onda delta. Por eso nunca se usa
+   sin confirmación y la tabla de concordancia se presenta solo como dato descriptivo.
+2. **Resolución.** Antes de enviarla, la plataforma reduce la imagen a unos 1,2 megapíxeles. En un
+   ECG de 12 derivaciones completo, los primeros 20 ms de la onda delta pueden no distinguirse.
+3. **Fotos.** Reflejos, perspectiva, papel doblado o derivaciones sin rótulo empeoran la lectura.
+4. **Datos personales.** Muchos ECG impresos muestran nombre y documento del paciente. La app pide
+   confirmar que la imagen no los muestra, pero no lo verifica automáticamente.
+5. **Uso de la cuenta.** Cada lectura consume el uso de Claude de quien la pide.
+6. **Cámara.** Se usa la cámara del sistema, a través del selector de archivos del celular. No hay
+   vista previa en vivo dentro de la página. En computadoras se abre el selector de archivos.
+7. **PDF.** Solo se procesa la primera página.
+
+## Dependencias de desarrollo
+
+`npm audit` no informa vulnerabilidades en lo que llega a la app (`--omit=dev`). Sí informa
+vulnerabilidades en Vite y Vitest, que se usan solo para desarrollar y probar. Afectan al
+servidor de desarrollo, que aquí escucha solo en `127.0.0.1`. Conviene actualizarlas a sus
+versiones mayores siguientes en una tarea aparte, volviendo a correr las pruebas.
+
 ## Fuera del alcance de esta versión
 
 - No calcula probabilidades ni confianza estadística (no hay un modelo validado que las sustente).
 - No considera vías múltiples, preexcitación mínima/intermitente, cardiopatías congénitas
   (p. ej., Ebstein) ni otras situaciones en las que el algoritmo pierde exactitud.
 - No hay validación en población pediátrica dentro de esta herramienta.
-- Sin corazón 3D, carga de imágenes de ECG, base de datos, inicio de sesión ni despliegue.
-- No se guarda ningún dato; recargar la página borra todo.
+- Sin corazón 3D, base de datos, inicio de sesión ni despliegue público.
+- No se guarda ningún dato ni imagen; recargar la página borra todo.

@@ -8,16 +8,32 @@ criterios del ECG de superficie, aplicando de forma determinista el algoritmo de
 > revisarse contra la publicación original antes de cualquier uso asistencial
 > (ver [docs/LIMITACIONES.md](docs/LIMITACIONES.md)). No ingresar datos identificables de pacientes.
 
-## Qué hace esta versión (MVP)
+## Qué hace esta versión (0.2.0)
 
-- Formulario por derivación (I, II, III, aVR, aVF, V1) con la polaridad inicial de la onda delta
-  (primeros 20 ms) y las relaciones R/S en V1 y en III.
-- Aplica el algoritmo paso a paso y muestra: región predicha, abreviatura y descripción,
-  recorrido de decisiones, criterios usados, datos faltantes, referencia y versión.
-- Distingue **región predicha**, **datos insuficientes**, **resultado indeterminado** y
-  **no clasificable**. Nunca completa un dato faltante ni inventa una localización.
-- No guarda datos, no tiene inicio de sesión, base de datos ni nube. El corazón 3D y la carga de
-  imágenes de ECG quedan para versiones futuras.
+Al abrir la app se elige una de dos versiones:
+
+1. **Versión simple: desde la imagen del ECG.** Se toma una foto con la cámara del celular o la
+   tablet, o se sube un archivo JPG, PNG, BMP o PDF (se usa la primera página). La imagen queda en
+   pantalla con zoom. Opcionalmente, Claude propone una lectura **experimental** de cada criterio.
+   Después, la revisión guiada es obligatoria: cada dato se confirma a mano y solo los datos
+   confirmados entran al algoritmo. Al final se muestra la concordancia entre la IA y la revisión.
+2. **Cuestionario guiado (algoritmo de Arruda).** Hace una pregunta por vez, en el orden del
+   algoritmo, y solo pide los datos que necesita la rama. Desde ahí también se puede abrir el
+   formulario completo con todos los criterios juntos.
+
+En los dos casos el resultado muestra la región predicha, el recorrido de decisiones, los
+criterios usados, los datos faltantes, la referencia y la versión del algoritmo. Distingue
+**región predicha**, **datos insuficientes**, **resultado indeterminado** y **no clasificable**.
+
+No guarda datos ni imágenes, no tiene inicio de sesión, base de datos ni nube. El corazón 3D
+queda para versiones futuras.
+
+### Lectura automática con IA
+
+- Solo funciona en la versión publicada en claude.ai: usa la cuenta de Claude de quien la abre,
+  con su permiso. Al ejecutarla en local (`npm run dev`) la app lo indica y sigue sin IA.
+- Antes de enviar la imagen hay que confirmar que no contiene datos identificables.
+- La respuesta se valida: cualquier valor fuera de las opciones permitidas se descarta.
 
 ## Cómo ejecutarla
 
@@ -28,6 +44,7 @@ npm install
 npm run dev      # abre http://127.0.0.1:5173
 npm test         # pruebas automatizadas (Vitest)
 npm run build    # compilación de producción en dist/
+npm run build:artefacto  # página única para publicar en claude.ai (dist-artefacto/)
 ```
 
 ## Estructura
@@ -38,14 +55,22 @@ src/
     tipos.ts          # tipos de entrada y resultado
     catalogo.ts       # regiones, nombres, referencia y versión
     arruda.ts         # pasos 1–4 y función aplicarArruda()
+  ia/lectorIA.ts      # lectura experimental con Claude y validación de su respuesta
+  imagen/preparar.ts  # abre JPG/PNG/BMP/PDF en el navegador
   componentes/        # interfaz React
-    FormularioECG.tsx
+    PantallaInicio.tsx      # elección de versión
+    ModoImagen.tsx          # cámara / archivo + propuesta de la IA
+    Asistente.tsx           # cuestionario guiado paso a paso
+    VisorECG.tsx            # imagen con zoom
+    FormularioECG.tsx       # formulario completo
     PanelResultado.tsx
     ExplicacionAlgoritmo.tsx
+    campos.ts               # definición de cada criterio
   App.tsx, main.tsx, estilos.css
   tests/
     arruda.test.ts    # ramas del algoritmo + prueba exhaustiva de 62 500 combinaciones
-    App.test.tsx      # pruebas de interfaz
+    App.test.tsx, Asistente.test.tsx, ModoImagen.test.tsx  # interfaz
+    lectorIA.test.ts  # validación de la respuesta de la IA y tipos de archivo
 docs/
   ALGORITMO.md        # reglas implementadas
   LIMITACIONES.md     # limitaciones y puntos a revisar
