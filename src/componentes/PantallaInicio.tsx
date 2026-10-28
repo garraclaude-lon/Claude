@@ -14,11 +14,11 @@ export function PantallaInicio({ onElegir }: Props) {
           icono={<IconoCamara />}
           tono="azul"
           etiqueta="Versión simple"
-          titulo="Desde la imagen del ECG"
+          titulo="Subir ECG"
           onClick={() => onElegir('imagen')}
         >
-          Sacá una foto con la cámara o subí el ECG (JPG, PNG, BMP o PDF). La IA propone una lectura
-          experimental y vos confirmás cada criterio mirando el trazado.
+          Formatos soportados (JPG, PNG, BMP o PDF). La IA propone una lectura experimental y vos
+          confirmás cada criterio mirando el trazado.
         </BotonModo>
         <BotonModo
           icono={<IconoArbol />}

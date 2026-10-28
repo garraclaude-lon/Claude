@@ -33,7 +33,7 @@ describe('Pantalla de inicio', () => {
     expect(screen.getByText('Localización de vías accesorias — Algoritmo de Arruda')).toBeInTheDocument();
     expect(screen.queryByText(/Prototipo de investigación\./)).not.toBeInTheDocument();
     expect(screen.getByText(/Prototipo sin uso asistencial/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Desde la imagen del ECG/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Subir ECG/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Cuestionario guiado/ })).toBeInTheDocument();
   });
 
@@ -70,7 +70,7 @@ describe('Pantalla de inicio', () => {
   it('la versión simple ofrece cámara y carga de archivo', async () => {
     const u = userEvent.setup();
     render(<App obtenerLector={sinIA} />);
-    await u.click(screen.getByRole('button', { name: /Desde la imagen del ECG/ }));
+    await u.click(screen.getByRole('button', { name: /Subir ECG/ }));
     expect(screen.getByTestId('input-camara')).toHaveAttribute('capture', 'environment');
     expect(screen.getByTestId('input-archivo').getAttribute('accept')).toContain('.bmp');
     expect(screen.getByTestId('input-archivo').getAttribute('accept')).toContain('.pdf');
@@ -79,7 +79,7 @@ describe('Pantalla de inicio', () => {
   it('volver al inicio desde cada modo', async () => {
     const u = userEvent.setup();
     render(<App obtenerLector={sinIA} />);
-    await u.click(screen.getByRole('button', { name: /Desde la imagen del ECG/ }));
+    await u.click(screen.getByRole('button', { name: /Subir ECG/ }));
     await u.click(screen.getByRole('button', { name: 'Volver al inicio' }));
     expect(screen.getByRole('heading', { name: '¿Cómo querés trabajar?' })).toBeInTheDocument();
   });
