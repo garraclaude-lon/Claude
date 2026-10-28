@@ -34,6 +34,8 @@ export function Visor3D({ regiones, onCerrar }: Props) {
   const [pausado, setPausado] = useState(reducirMovimiento);
   const [lento, setLento] = useState(false);
   const [vista, setVista] = useState<Vista>('via');
+  const [etiquetas, setEtiquetas] = useState(true);
+  const [coronarias, setCoronarias] = useState(true);
 
   useEffect(() => {
     cerrar.current?.focus();
@@ -75,6 +77,8 @@ export function Visor3D({ regiones, onCerrar }: Props) {
   useEffect(() => control.current?.pausar(pausado), [pausado]);
   useEffect(() => control.current?.velocidad(lento ? 0.25 : 1), [lento]);
   useEffect(() => control.current?.vista(vista), [vista]);
+  useEffect(() => control.current?.etiquetas(etiquetas), [etiquetas, estado]);
+  useEffect(() => control.current?.coronarias(coronarias), [coronarias, estado]);
 
   const nombres = regiones.map((r) => r.abreviatura).join(' o ');
 
@@ -119,6 +123,16 @@ export function Visor3D({ regiones, onCerrar }: Props) {
           <button type="button" className="boton-secundario" onClick={() => setPausado((p) => !p)}>
             {pausado ? 'Reanudar' : 'Pausar'}
           </button>
+          <div className="interruptores" role="group" aria-label="Capas">
+            <button type="button" className="interruptor" aria-pressed={etiquetas} onClick={() => setEtiquetas((v) => !v)}>
+              <span className="interruptor-pista" aria-hidden="true"><span /></span>
+              Referencias anatómicas
+            </button>
+            <button type="button" className="interruptor" aria-pressed={coronarias} onClick={() => setCoronarias((v) => !v)}>
+              <span className="interruptor-pista" aria-hidden="true"><span /></span>
+              Arterias coronarias
+            </button>
+          </div>
         </div>
 
         <ul className="modal-3d-leyenda">

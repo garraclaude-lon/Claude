@@ -22,7 +22,7 @@ import type { CodigoRegion } from '../algoritmo/tipos';
 import { SEGMENTOS } from '../componentes/DiagramaAnillos';
 // El modelo va embebido como texto base64 y se decodifica acá mismo: el visor de claude.ai
 // no permite cargar datos con fetch (tampoco desde una URL data:).
-import modeloBase64 from './modelo/corazon.glb?inline';
+import modeloBase64 from './modelo/corazon.glb?base64';
 import referencias from './modelo/referencias.json';
 
 export interface OpcionesEscena {
@@ -38,6 +38,10 @@ export interface ControlEscena {
   pausar(p: boolean): void;
   velocidad(factor: number): void;
   vista(v: Vista): void;
+  /** Muestra u oculta las etiquetas de referencias anatómicas (la de la vía siempre queda). */
+  etiquetas(visibles: boolean): void;
+  /** Muestra u oculta las arterias coronarias derecha e izquierda. */
+  coronarias(visibles: boolean): void;
   destruir(): void;
 }
 
@@ -74,9 +78,9 @@ export function ubicacionRegion(c: CodigoRegion): THREE.Vector3 {
   return p;
 }
 
-/** Convierte la URL data: (base64) del modelo en bytes, sin usar fetch. */
-export function decodificarModelo(dataUrl: string): ArrayBuffer {
-  const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+/** Convierte el modelo en base64 (o una URL data: en base64) en bytes, sin usar fetch. */
+export function decodificarModelo(texto: string): ArrayBuffer {
+  const b64 = texto.startsWith('data:') ? texto.slice(texto.indexOf(',') + 1) : texto;
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -191,6 +195,8 @@ function material(grupo: string): THREE.MeshPhysicalMaterial {
 // --- Escena --------------------------------------------------------------------
 
 export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEscena): Promise<ControlEscena> {
+  // Primero el modelo: si falla, todavía no se agregó nada a la página.
+  const gltf = await new GLTFLoader().parseAsync(decodificarModelo(modeloBase64), '');
   const ancho = () => contenedor.clientWidth || 600;
   const alto = () => contenedor.clientHeight || 420;
 
@@ -233,7 +239,6 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
   escena.add(corazon);
 
   // --- Modelo anatómico
-  const gltf = await new GLTFLoader().parseAsync(decodificarModelo(modeloBase64), '');
   const ventriculos = new THREE.Group();
   const auriculas = new THREE.Group();
   const fijos = new THREE.Group();
@@ -245,6 +250,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
     auricula: auriculas, vena_pulmonar: auriculas,
   };
   const mallas: THREE.Mesh[] = [];
+  const coronarias: THREE.Mesh[] = [];
   gltf.scene.traverse((o) => {
     if ((o as THREE.Mesh).isMesh) mallas.push(o as THREE.Mesh);
   });
@@ -253,6 +259,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
     m.geometry.computeVertexNormals();
     m.material = registrar(material(grupo));
     m.renderOrder = grupo === 'ventriculo' || grupo === 'auricula' ? 2 : 1;
+    if (grupo === 'arteria') coronarias.push(m);
     registrar(m.geometry);
     (DESTINO[grupo] ?? fijos).add(m);
   }
@@ -268,7 +275,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
     const chispa = new THREE.Sprite(
       registrar(new THREE.SpriteMaterial({ map: brillo, color: 0xffe07a, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true })),
     );
-    chispa.scale.setScalar(1.1);
+    chispa.scale.setScalar(0.75);
     // Los tramos ventriculares se mueven con los ventrículos; los auriculares con las aurículas.
     const destino = t.inicio >= 0.17 ? ventriculos : auriculas;
     destino.add(tubo, chispa);
@@ -324,7 +331,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
       corazon.add(g);
       // Dirección del cruce: de la aurícula al ventrículo (normal del anillo)
       const anillo = SEGMENTOS[c]![0].anillo === 'm' ? ANILLOS.mitral : ANILLOS.tricuspide;
-      return { halo, luz, cruce, dir: v3(anillo.normal).normalize() };
+      return { halo, luz, cruce, led, dir: v3(anillo.normal).normalize() };
     });
 
   // --- Etiquetas
@@ -355,7 +362,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
   composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   composer.setSize(ancho(), alto());
   composer.addPass(new RenderPass(escena, camara));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(ancho(), alto()), 0.5, 0.4, 0.93);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(ancho(), alto()), 0.32, 0.35, 0.95);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
   desechables.push(composer, bloom);
@@ -407,10 +414,14 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
     camara.position.set(0, 0, distancia(v === 'anillos' ? 30 : 37) * cerca);
     controles.target.set(0, 0, 0);
     controles.update();
-    const angosto = ancho() < 520;
-    for (const e of etConduccion) e.style.visibility = v === 'frontal' && !angosto ? 'visible' : 'hidden';
-    for (const e of etAnatomia) e.style.visibility = angosto ? 'hidden' : 'visible';
+    aplicarEtiquetas();
   };
+  let etiquetasVisibles = true;
+  function aplicarEtiquetas() {
+    const angosto = ancho() < 520;
+    for (const e of etConduccion) e.style.visibility = etiquetasVisibles && vistaActual === 'frontal' && !angosto ? 'visible' : 'hidden';
+    for (const e of etAnatomia) e.style.visibility = etiquetasVisibles && !angosto ? 'visible' : 'hidden';
+  }
   corazon.quaternion.copy(QUAT_VIA);
   vista('via');
 
@@ -439,27 +450,30 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
     // Nódulos
     const sa = pulso(t, 0, 0.03, 0.12);
     nodoSA.mat.emissive.copy(colorReposo).lerp(colorActivo, sa);
-    nodoSA.mat.emissiveIntensity = 0.7 + sa * 1.8;
-    nodoSA.halo.material.opacity = sa;
+    nodoSA.mat.emissiveIntensity = 0.6 + sa * 1.0;
+    nodoSA.halo.material.opacity = sa * 0.45;
     const av = t >= 0.09 && t <= 0.17 ? 0.55 + 0.45 * Math.sin(((t - 0.09) / 0.08) * Math.PI) : 0;
     nodoAV.mat.emissive.copy(colorReposo).lerp(colorActivo, av);
-    nodoAV.mat.emissiveIntensity = 0.7 + av * 1.6;
-    nodoAV.halo.material.opacity = av;
+    nodoAV.mat.emissiveIntensity = 0.6 + av * 0.9;
+    nodoAV.halo.material.opacity = av * 0.4;
 
     for (const tr of tramos) {
       const a = pulso(t, tr.inicio, tr.fin, 0.12);
       tr.mat.emissive.copy(colorReposo).lerp(colorActivo, a);
-      tr.mat.emissiveIntensity = 0.6 + a * 1.8;
+      tr.mat.emissiveIntensity = 0.5 + a * 0.9;
       const visible = t >= tr.inicio && t <= tr.fin + 0.015;
       tr.chispa.visible = visible;
       if (visible) tr.chispa.position.copy(tr.curva.getPointAt(ventana(t, tr.inicio, tr.fin)));
     }
 
     for (const l of leds) {
-      const latido = 0.5 + 0.5 * Math.sin(ahora / 170);
-      l.halo.material.opacity = 0.75 + 0.25 * latido;
-      l.halo.scale.setScalar(3 + 1.6 * latido);
-      l.luz.intensity = 4 + 6 * latido;
+      // Titila: encendido y apagado con bordes suaves, unas 1,6 veces por segundo.
+      const onda = 0.5 + 0.5 * Math.sin((ahora / 1000) * Math.PI * 2 * 1.6);
+      const encendido = suave(Math.min(1, Math.max(0, (onda - 0.25) / 0.5)));
+      l.led.material.opacity = 0.25 + 0.75 * encendido;
+      l.halo.material.opacity = 0.05 + 0.95 * encendido;
+      l.halo.scale.setScalar(2.4 + 1.8 * encendido);
+      l.luz.intensity = 0.5 + 9 * encendido;
       const c = ventana(t, VIA_INICIO, VIA_FIN);
       const enCruce = t >= VIA_INICIO && t <= VIA_FIN + 0.04;
       l.cruce.material.opacity = enCruce ? 1 - Math.max(0, (t - VIA_FIN) / 0.04) : 0;
@@ -499,14 +513,26 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
       factor = f;
     },
     vista,
+    etiquetas: (b) => {
+      etiquetasVisibles = b;
+      aplicarEtiquetas();
+    },
+    coronarias: (b) => {
+      for (const m of coronarias) m.visible = b;
+    },
     destruir: () => {
       cancelAnimationFrame(cuadro);
-      observador.disconnect();
-      controles.dispose();
-      for (const d of desechables) d.dispose();
-      renderer.dispose();
+      // Primero se quita lo visible; después se libera memoria (un error ahí no deja restos en pantalla).
       renderer.domElement.remove();
       etiquetas.domElement.remove();
+      observador.disconnect();
+      for (const d of [controles, ...desechables, renderer]) {
+        try {
+          d.dispose();
+        } catch (e) {
+          console.warn('3D location: no se pudo liberar un recurso', e);
+        }
+      }
     },
   };
 }

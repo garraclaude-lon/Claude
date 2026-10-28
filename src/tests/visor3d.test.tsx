@@ -26,6 +26,20 @@ describe('Botón 3D location', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('tiene interruptores para referencias anatómicas y arterias coronarias', async () => {
+    const u = userEvent.setup();
+    render(<PanelResultado resultado={aplicarArruda(e({ deltaI: 'negativa', deltaAVF: 'positiva' }))} desactualizado={false} onReiniciar={() => {}} />);
+    await u.click(screen.getByRole('button', { name: '3D location' }));
+    for (const nombre of ['Referencias anatómicas', 'Arterias coronarias']) {
+      const boton = screen.getByRole('button', { name: nombre });
+      expect(boton).toHaveAttribute('aria-pressed', 'true');
+      await u.click(boton);
+      expect(boton).toHaveAttribute('aria-pressed', 'false');
+      await u.click(boton);
+      expect(boton).toHaveAttribute('aria-pressed', 'true');
+    }
+  });
+
   it('muestra las dos opciones cuando el algoritmo no discrimina (PSTA o PSMA)', async () => {
     const u = userEvent.setup();
     const r = aplicarArruda(e({ deltaI: 'positiva', rsV1: 'r_menor_igual_s', deltaII: 'positiva', deltaV1: 'negativa', deltaAVF: 'isoelectrica' }));
@@ -101,8 +115,12 @@ describe('Modelo embebido', () => {
     const { decodificarModelo } = await import('../corazon3d/escena');
     const { readFileSync } = await import('node:fs');
     const bytes = readFileSync('src/corazon3d/modelo/corazon.glb');
-    const buf = decodificarModelo('data:model/gltf-binary;base64,' + bytes.toString('base64'));
+    // Lo que realmente importa la app (también en desarrollo y en la página publicada)
+    const { default: embebido } = await import('../corazon3d/modelo/corazon.glb?base64');
+    expect(embebido).toBe(bytes.toString('base64'));
+    const buf = decodificarModelo(embebido);
     expect(buf.byteLength).toBe(bytes.length);
+    expect(decodificarModelo('data:model/gltf-binary;base64,' + embebido).byteLength).toBe(bytes.length);
     const v = new DataView(buf);
     expect(String.fromCharCode(v.getUint8(0), v.getUint8(1), v.getUint8(2), v.getUint8(3))).toBe('glTF');
     expect(v.getUint32(8, true)).toBe(buf.byteLength); // largo declarado en la cabecera del GLB
