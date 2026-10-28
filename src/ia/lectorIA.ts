@@ -10,6 +10,7 @@
  */
 import type { CampoECG, EntradaECG } from '../algoritmo/tipos';
 import { ENTRADA_VACIA } from '../algoritmo/arruda';
+import { normalizarCaja, type Caja } from '../imagen/anonimizar';
 
 export type CalidadImagen = 'buena' | 'regular' | 'mala' | null;
 
@@ -23,6 +24,72 @@ export interface PropuestaIA {
 
 export interface LectorIA {
   leer(imagen: Blob, signal?: AbortSignal): Promise<PropuestaIA>;
+  /** Busca datos personales visibles en la imagen. Opcional: sin él no se revisa. */
+  detectarDatosPersonales?(imagen: Blob, signal?: AbortSignal): Promise<DeteccionPrivacidad>;
+}
+
+export type TipoDatoPersonal =
+  | 'nombre'
+  | 'apellido'
+  | 'documento'
+  | 'historia_clinica'
+  | 'fecha_nacimiento'
+  | 'direccion'
+  | 'telefono'
+  | 'otro';
+
+export const NOMBRES_DATO_PERSONAL: Record<TipoDatoPersonal, string> = {
+  nombre: 'Nombre',
+  apellido: 'Apellido',
+  documento: 'Número de documento',
+  historia_clinica: 'Número de historia clínica',
+  fecha_nacimiento: 'Fecha de nacimiento',
+  direccion: 'Dirección',
+  telefono: 'Teléfono',
+  otro: 'Otro dato que identifica al paciente',
+};
+
+export interface ZonaPersonal extends Caja {
+  tipo: TipoDatoPersonal;
+}
+
+export interface DeteccionPrivacidad {
+  hayDatosPersonales: boolean;
+  zonas: ZonaPersonal[];
+}
+
+export const PROMPT_PRIVACIDAD = `Revisás imágenes de electrocardiogramas antes de usarlas en un proyecto de investigación, para proteger la privacidad del paciente.
+
+Buscá en la imagen texto que identifique a una PERSONA: nombre, apellido, número de documento (DNI), número de historia clínica, fecha de nacimiento, dirección o teléfono. NO cuentes como dato personal: nombre del hospital o del equipo, rótulos de derivaciones (I, II, aVF, V1…), velocidad, ganancia, filtros, frecuencia cardíaca, intervalos, fecha u hora del estudio ni el nombre del médico informante.
+
+IMPORTANTE: NO transcribas ni repitas ningún dato que encuentres. Solo indicá de qué tipo es y dónde está.
+
+Para cada dato, dá un rectángulo que lo cubra por completo, con un pequeño margen, en fracciones del ancho y del alto de la imagen (0 = borde izquierdo o superior, 1 = borde derecho o inferior). Si un nombre y un apellido están juntos, podés usar un solo rectángulo con tipo "nombre".
+
+Respondé SOLO con JSON con esta forma:
+{"hayDatosPersonales": true, "zonas": [{"tipo": "nombre" | "apellido" | "documento" | "historia_clinica" | "fecha_nacimiento" | "direccion" | "telefono" | "otro", "x": 0.05, "y": 0.02, "ancho": 0.3, "alto": 0.04}]}
+Si no hay datos personales: {"hayDatosPersonales": false, "zonas": []}`;
+
+const TIPOS_DATO = Object.keys(NOMBRES_DATO_PERSONAL) as TipoDatoPersonal[];
+
+/** Valida la respuesta de la detección. Zonas inválidas se descartan; las válidas se limitan a la imagen. */
+export function interpretarDeteccion(respuesta: unknown): DeteccionPrivacidad {
+  const obj = respuesta && typeof respuesta === 'object' && !Array.isArray(respuesta) ? (respuesta as Record<string, unknown>) : {};
+  const crudas = Array.isArray(obj.zonas) ? obj.zonas : [];
+  const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : NaN);
+  const zonas: ZonaPersonal[] = [];
+  for (const z of crudas.slice(0, 20)) {
+    if (!z || typeof z !== 'object') continue;
+    const r = z as Record<string, unknown>;
+    const [x, y, ancho, alto] = [num(r.x), num(r.y), num(r.ancho), num(r.alto)];
+    if ([x, y, ancho, alto].some(Number.isNaN) || ancho <= 0 || alto <= 0) continue;
+    const caja = normalizarCaja(x, y, x + ancho, y + alto);
+    if (caja.ancho <= 0 || caja.alto <= 0) continue;
+    const tipo = TIPOS_DATO.includes(r.tipo as TipoDatoPersonal) ? (r.tipo as TipoDatoPersonal) : 'otro';
+    zonas.push({ tipo, ...caja });
+  }
+  // Ante la duda, se considera que hay datos si llegó alguna zona válida.
+  return { hayDatosPersonales: zonas.length > 0 || obj.hayDatosPersonales === true, zonas };
 }
 
 const VALORES_POLARIDAD = ['positiva', 'negativa', 'isoelectrica', 'no_evaluable'];
@@ -114,6 +181,15 @@ export async function obtenerLectorClaude(): Promise<LectorIA | null> {
         signal,
       });
       return interpretarRespuestaIA(respuesta);
+    },
+    async detectarDatosPersonales(imagen, signal) {
+      const respuesta = await sample.json(PROMPT_PRIVACIDAD, {
+        images: [imagen],
+        modelTier: 'default',
+        cache: false,
+        signal,
+      });
+      return interpretarDeteccion(respuesta);
     },
   };
 }

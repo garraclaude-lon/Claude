@@ -18,6 +18,25 @@
 7. **Definición de isoeléctrica.** La herramienta no mide el ECG: depende de que el usuario
    evalúe correctamente los primeros 20 ms. No hay ayuda visual ni umbrales de amplitud.
 
+## Detección de datos personales en la imagen
+
+1. **Cómo funciona.** Al cargar la imagen, Claude busca nombre, apellido, documento, historia
+   clínica, fecha de nacimiento, dirección o teléfono. Solo informa el **tipo** de dato y **dónde**
+   está; se le pide no transcribirlo. Si encuentra algo, aparece una alerta roja y la imagen se
+   recorta (si los datos están en una franja superior o inferior) o se tapan las zonas con negro.
+   La imagen original se descarta y lo que sigue usa la versión anonimizada.
+2. **La primera revisión ve la imagen original.** Para detectar los datos, Claude tiene que ver
+   la imagen tal como se cargó, nombre incluido. No se guarda, pero viaja a Claude con la cuenta
+   de quien usa la app. Si eso no es aceptable para el comité, hay que anonimizar la imagen antes
+   de cargarla.
+3. **Puede fallar.** Puede no ver un dato (letra chica, foto borrosa, texto escrito a mano) o
+   ubicarlo con poca precisión. Por eso las zonas se agrandan un margen, se puede **tapar a mano**
+   cualquier zona y la app pide confirmar que la imagen está libre de datos antes de la lectura.
+4. **Fuera de claude.ai no hay detección automática.** Al ejecutar la app en local se avisa y
+   queda solo la herramienta manual.
+5. **Nombre del archivo.** Después de anonimizar, la app deja de mostrar el nombre del archivo,
+   que también puede contener el nombre del paciente.
+
 ## Lectura automática con IA (experimental)
 
 1. **No está validada.** Nadie midió su exactitud para leer la onda delta. Por eso nunca se usa
@@ -25,8 +44,7 @@
 2. **Resolución.** Antes de enviarla, la plataforma reduce la imagen a unos 1,2 megapíxeles. En un
    ECG de 12 derivaciones completo, los primeros 20 ms de la onda delta pueden no distinguirse.
 3. **Fotos.** Reflejos, perspectiva, papel doblado o derivaciones sin rótulo empeoran la lectura.
-4. **Datos personales.** Muchos ECG impresos muestran nombre y documento del paciente. La app pide
-   confirmar que la imagen no los muestra, pero no lo verifica automáticamente.
+4. **Datos personales.** Ver "Detección de datos personales en la imagen" arriba.
 5. **Uso de la cuenta.** Cada lectura consume el uso de Claude de quien la pide.
 6. **Cámara.** Se usa la cámara del sistema, a través del selector de archivos del celular. No hay
    vista previa en vivo dentro de la página. En computadoras se abre el selector de archivos.

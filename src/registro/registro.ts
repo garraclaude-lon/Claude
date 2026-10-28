@@ -11,7 +11,7 @@ import type { PropuestaIA } from '../ia/lectorIA';
 import { type Concordancia, type DatosEEF } from './eef';
 import { edadTotalMeses, grupoEtario, type DatosPaciente, type GrupoEtario, type Sexo } from './paciente';
 
-export const VERSION_APP = '0.4.2';
+export const VERSION_APP = '0.5.0';
 export const ESQUEMA_REGISTRO = 2;
 export const COLECCION = 'analisis';
 

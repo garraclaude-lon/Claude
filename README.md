@@ -8,7 +8,7 @@ criterios del ECG de superficie, aplicando de forma determinista el algoritmo de
 > revisarse contra la publicación original antes de cualquier uso asistencial
 > (ver [docs/LIMITACIONES.md](docs/LIMITACIONES.md)). No ingresar datos identificables de pacientes.
 
-## Qué hace esta versión (0.4.2)
+## Qué hace esta versión (0.5.0)
 
 Al abrir la app se elige una de dos versiones:
 
@@ -39,6 +39,13 @@ predicción de Arruda coincide con el sitio confirmado y muestra el porcentaje d
 En local (`npm run dev`) no hay base de datos y la app lo indica.
 
 El corazón 3D queda para versiones futuras.
+
+### Protección de datos personales en la imagen
+
+Al cargar la imagen, la app busca nombre, documento y otros datos del paciente. Si los
+encuentra, muestra una **alerta roja** y recorta la imagen o tapa esas zonas en negro antes de
+seguir. También se puede tapar cualquier zona a mano. Detalles y límites en
+[docs/LIMITACIONES.md](docs/LIMITACIONES.md).
 
 ### Lectura automática con IA
 
@@ -73,11 +80,14 @@ src/
     registro.ts       # formato del registro, resumen y conexión con la base de datos
     eef.ts            # sitios del EEF, concordancia con Arruda y códigos de registro
   imagen/preparar.ts  # abre JPG/PNG/BMP/PDF en el navegador
+  imagen/anonimizar.ts  # ocultar o recortar zonas con datos personales
   componentes/        # interfaz React
     PantallaInicio.tsx      # elección de versión
     ModoImagen.tsx          # cámara / archivo + propuesta de la IA
     Asistente.tsx           # cuestionario guiado paso a paso
     VisorECG.tsx            # imagen con zoom
+    AlertaPrivacidad.tsx    # alerta roja de datos personales detectados
+    TaparZonas.tsx          # tapar zonas a mano
     FormularioECG.tsx       # formulario completo
     FormularioPaciente.tsx  # sexo y edad
     DiagramaAnillos.tsx     # esquema de los anillos AV (región predicha y sitio del EEF)
