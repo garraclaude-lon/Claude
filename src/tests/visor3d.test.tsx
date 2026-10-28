@@ -99,12 +99,12 @@ describe('Modelo anatómico extraído', () => {
 describe('Modelo embebido', () => {
   it('se decodifica sin fetch y es un GLB sin compresión que requiera WebAssembly', async () => {
     const { decodificarModelo } = await import('../corazon3d/escena');
-    const { readFileSync } = await import('node:fs');
-    const bytes = readFileSync('src/corazon3d/modelo/corazon.glb');
-    const buf = decodificarModelo('data:model/gltf-binary;base64,' + bytes.toString('base64'));
+    const { default: modelo } = await import('../corazon3d/modelo/corazon.glb?inline');
+    expect(modelo.startsWith('data:')).toBe(true);
+    const buf = decodificarModelo(modelo);
     const v = new DataView(buf);
     expect(String.fromCharCode(v.getUint8(0), v.getUint8(1), v.getUint8(2), v.getUint8(3))).toBe('glTF');
-    expect(buf.byteLength).toBe(bytes.length);
+    expect(v.getUint32(8, true)).toBe(buf.byteLength); // largo declarado en la cabecera del GLB
     const json = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 20, v.getUint32(12, true))));
     expect(json.extensionsUsed ?? []).not.toContain('EXT_meshopt_compression');
   });
