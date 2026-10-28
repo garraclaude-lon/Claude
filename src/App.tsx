@@ -9,7 +9,7 @@ import { EncabezadoPaciente, FormularioPaciente } from './componentes/Formulario
 import { GuardarRegistro, nuevaSesion } from './componentes/GuardarRegistro';
 import { ResumenRegistro } from './componentes/ResumenRegistro';
 import { Asistente } from './componentes/Asistente';
-import { ExplicacionAlgoritmo } from './componentes/ExplicacionAlgoritmo';
+import { IconoAviso, Marca } from './componentes/Iconos';
 import { FormularioECG } from './componentes/FormularioECG';
 import { ModoImagen } from './componentes/ModoImagen';
 import { PanelResultado } from './componentes/PanelResultado';
@@ -47,16 +47,26 @@ export function App({ obtenerLector, preparar, obtenerRepositorio = obtenerRepos
   return (
     <div className="app">
       <header className="encabezado">
-        <h1>WPW Navigator 3D by Longa</h1>
-        <p className="subtitulo">Localización de vías accesorias — Algoritmo de Arruda</p>
+        <button type="button" className="marca" onClick={irInicio} aria-label="Ir al inicio">
+          <Marca className="marca-icono" />
+        </button>
+        <div className="encabezado-textos">
+          <h1>
+            WPW Navigator 3D <span className="by">by Longa</span>
+          </h1>
+          <p className="subtitulo">Localización de vías accesorias — Algoritmo de Arruda</p>
+        </div>
       </header>
 
       <p className="aviso-investigacion" role="note">
-        <strong>Prototipo de investigación.</strong> No reemplaza la evaluación clínica ni el estudio
-        electrofisiológico. Las reglas implementadas deben revisarse contra la publicación original
-        antes de cualquier uso asistencial. No ingreses datos identificables de pacientes. Solo se
-        guardan datos anónimos (sexo, edad, criterios y resultado) cuando pulsás “Guardar en el
-        registro”; la imagen nunca se guarda.
+        <IconoAviso className="aviso-icono" />
+        <span>
+          <strong>Prototipo de investigación.</strong> No reemplaza la evaluación clínica ni el estudio
+          electrofisiológico; las reglas deben revisarse contra la publicación original antes de
+          cualquier uso asistencial. No ingreses datos identificables. Solo se guardan datos anónimos
+          (sexo, edad, criterios y resultado) al pulsar “Guardar en el registro”; la imagen nunca se
+          guarda.
+        </span>
       </p>
 
       <main>
@@ -82,8 +92,6 @@ export function App({ obtenerLector, preparar, obtenerRepositorio = obtenerRepos
         )}
         {modo === 'formulario' && <ModoFormulario repositorio={repositorio} paciente={paciente} setPaciente={setPaciente} onSalir={irInicio} />}
       </main>
-
-      <ExplicacionAlgoritmo />
 
       <footer className="pie">
         Servicio de Electrofisiología Pediátrica — Hospital Garrahan · Prototipo sin uso asistencial

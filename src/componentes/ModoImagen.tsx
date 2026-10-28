@@ -6,6 +6,7 @@ import type { Repositorio } from '../registro/registro';
 import { Asistente } from './Asistente';
 import { EncabezadoPaciente, FormularioPaciente } from './FormularioPaciente';
 import { GuardarRegistro, nuevaSesion } from './GuardarRegistro';
+import { IconoArchivo, IconoCamara } from './Iconos';
 import { VisorECG } from './VisorECG';
 
 interface Props {
@@ -134,6 +135,7 @@ export function ModoImagen({ onSalir, repositorio = null, obtenerLector = obtene
               disabled={fase === 'procesando'}
               data-testid="input-camara"
             />
+            <IconoCamara className="boton-carga-icono" />
             <span className="boton-carga-titulo">Tomar foto</span>
             <span className="boton-carga-desc">Abre la cámara en el celular o la tablet</span>
           </label>
@@ -145,6 +147,7 @@ export function ModoImagen({ onSalir, repositorio = null, obtenerLector = obtene
               disabled={fase === 'procesando'}
               data-testid="input-archivo"
             />
+            <IconoArchivo className="boton-carga-icono" />
             <span className="boton-carga-titulo">Subir archivo</span>
             <span className="boton-carga-desc">JPG, PNG, BMP o PDF (se usa la primera página)</span>
           </label>

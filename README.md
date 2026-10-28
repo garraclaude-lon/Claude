@@ -8,7 +8,7 @@ criterios del ECG de superficie, aplicando de forma determinista el algoritmo de
 > revisarse contra la publicación original antes de cualquier uso asistencial
 > (ver [docs/LIMITACIONES.md](docs/LIMITACIONES.md)). No ingresar datos identificables de pacientes.
 
-## Qué hace esta versión (0.4.0)
+## Qué hace esta versión (0.4.1)
 
 Al abrir la app se elige una de dos versiones:
 
@@ -80,10 +80,11 @@ src/
     VisorECG.tsx            # imagen con zoom
     FormularioECG.tsx       # formulario completo
     FormularioPaciente.tsx  # sexo y edad
+    DiagramaAnillos.tsx     # esquema de los anillos AV (región predicha y sitio del EEF)
+    Iconos.tsx              # marca e íconos de línea
     GuardarRegistro.tsx, ResumenRegistro.tsx
     SelectorEEF.tsx, CargarEEF.tsx  # localización confirmada en el EEF
     PanelResultado.tsx
-    ExplicacionAlgoritmo.tsx
     campos.ts               # definición de cada criterio
   App.tsx, main.tsx, estilos.css
   tests/

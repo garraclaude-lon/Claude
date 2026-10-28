@@ -1,5 +1,6 @@
 import { NOMBRES_CAMPOS, NOMBRES_VALORES } from '../algoritmo/catalogo';
 import type { EstadoResultado, ResultadoArruda } from '../algoritmo/tipos';
+import { DiagramaAnillos } from './DiagramaAnillos';
 
 const ETIQUETA_ESTADO: Record<EstadoResultado, string> = {
   region_predicha: 'Región predicha',
@@ -71,6 +72,8 @@ export function PanelResultado({ resultado, desactualizado, onReiniciar }: Props
       )}
 
       <p className="mensaje">{r.mensaje}</p>
+
+      {r.regiones.length > 0 && <DiagramaAnillos predichas={r.regiones.map((x) => x.codigo)} />}
 
       {r.datosFaltantes.length > 0 && (
         <div className="faltantes">

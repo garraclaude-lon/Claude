@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { aplicarArruda, ENTRADA_VACIA } from '../algoritmo/arruda';
 import { NOMBRES_CAMPOS, NOMBRES_VALORES } from '../algoritmo/catalogo';
-import type { CampoECG, EntradaECG, ResultadoArruda } from '../algoritmo/tipos';
+import type { CampoECG, EntradaECG, PasoTraza, ResultadoArruda } from '../algoritmo/tipos';
 import type { PropuestaIA } from '../ia/lectorIA';
 import { CAMPOS } from './campos';
 import { PanelResultado } from './PanelResultado';
@@ -70,6 +70,8 @@ export function Asistente({ propuesta, imagen, encabezado, alTerminar, onSalir }
             {propuesta.observacionGeneral && <span className="aviso-ia-obs"> “{propuesta.observacionGeneral}”</span>}
           </div>
         )}
+
+        <Pasos ruta={resultado.ruta} terminado={!pendiente} />
 
         {pasosRecorridos.length > 0 && (
           <ol className="recorrido-parcial" aria-label="Recorrido hasta ahora">
@@ -209,5 +211,30 @@ function Concordancia({ propuesta, confirmadas, campos }: PropsConcordancia) {
         </tbody>
       </table>
     </section>
+  );
+}
+
+const NOMBRES_PASOS = ['Pared libre izquierda', 'PS subepicárdica', 'Septal', 'Pared libre derecha'];
+
+/** Indicador de los 4 pasos del algoritmo: recorridos, actual, final u omitidos. */
+function Pasos({ ruta, terminado }: { ruta: PasoTraza[]; terminado: boolean }) {
+  const ultimo = ruta.length;
+  const desenlace = ruta[ultimo - 1]?.desenlace;
+  return (
+    <ol className="pasos" aria-label="Pasos del algoritmo">
+      {NOMBRES_PASOS.map((nombre, i) => {
+        const n = i + 1;
+        const estado =
+          n < ultimo ? 'hecho' : n === ultimo ? (!terminado ? 'actual' : desenlace === 'clasifica' ? 'final' : 'detenido') : terminado ? 'omitido' : 'futuro';
+        const textoEstado = { hecho: 'no se cumple, continúa', actual: 'en curso', final: 'define la región', detenido: 'se detiene', omitido: 'no se evalúa', futuro: 'pendiente' }[estado];
+        return (
+          <li key={n} className={`paso-indicador paso-${estado}`} aria-current={estado === 'actual' ? 'step' : undefined}>
+            <span className="paso-num" aria-hidden="true">{n}</span>
+            <span className="paso-nombre">{nombre}</span>
+            <span className="solo-lector">: {textoEstado}</span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }

@@ -4,6 +4,7 @@ import type { CodigoRegion } from '../algoritmo/tipos';
 import { construirEEF, normalizarCodigo, type CodigoEEF, type FuenteEEF } from '../registro/eef';
 import { NOMBRES_GRUPO, NOMBRES_SEXO } from '../registro/paciente';
 import { mensajeErrorRegistro, type RegistroGuardado, type Repositorio } from '../registro/registro';
+import { DiagramaAnillos } from './DiagramaAnillos';
 import { SelectorEEF } from './SelectorEEF';
 
 export function nombreRegiones(codigos: readonly string[] | undefined): string {
@@ -73,6 +74,7 @@ export function EditorEEF({ registro, repositorio, onCerrar }: PropsEditor) {
         concordancia={datosEEF?.concordancia ?? null}
         textoPendiente="Pendiente (sin resultado todavía)"
       />
+      <DiagramaAnillos predichas={regiones} confirmado={eef} titulo="Predicción y sitio confirmado" />
       {error && (
         <p className="alerta" role="alert">
           {error}

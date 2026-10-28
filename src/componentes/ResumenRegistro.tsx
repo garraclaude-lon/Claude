@@ -102,7 +102,7 @@ export function ResumenRegistro({ repositorio }: { repositorio: Repositorio | nu
                     {resumen.pendientesEEF.slice(0, MAX_PENDIENTES).map((r) => (
                       <tr key={r.codigo}>
                         <td className="codigo-celda">{r.codigo}</td>
-                        <td className="num">{fechaCorta(r.creadoEn)}</td>
+                        <td className="fecha">{fechaCorta(r.creadoEn)}</td>
                         <td>{pacienteCorto(r)}</td>
                         <td>{nombreRegiones(r.resultado?.regiones)}</td>
                         <td>
@@ -133,16 +133,24 @@ export function ResumenRegistro({ repositorio }: { repositorio: Repositorio | nu
 function Tabla({ titulo, filas, total, nota }: { titulo: string; filas: [string, number][]; total: number; nota?: string }) {
   return (
     <div className="resumen-tabla">
-      <table className="criterios">
+      <table className="criterios tabla-barras">
         <caption>{titulo}</caption>
         <tbody>
-          {filas.map(([k, n]) => (
-            <tr key={k}>
-              <td>{k}</td>
-              <td className="num">{n}</td>
-              <td className="num">{Math.round((n / total) * 100)}%</td>
-            </tr>
-          ))}
+          {filas.map(([k, n]) => {
+            const pct = Math.round((n / total) * 100);
+            return (
+              <tr key={k} title={`${k}: ${n} (${pct}%)`}>
+                <td className="tb-nombre">
+                  <span>{k}</span>
+                  <span className="tb-barra" aria-hidden="true">
+                    <span style={{ width: `${Math.max(pct, 2)}%` }} />
+                  </span>
+                </td>
+                <td className="num">{n}</td>
+                <td className="num tb-pct">{pct}%</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       {nota && <p className="nota">{nota}</p>}
