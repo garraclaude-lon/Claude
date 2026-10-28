@@ -32,6 +32,20 @@
    vista previa en vivo dentro de la página. En computadoras se abre el selector de archivos.
 7. **PDF.** Solo se procesa la primera página.
 
+## Registro de pacientes
+
+1. **Autorización.** Guardar datos de pacientes con fines de investigación, aunque sean
+   anónimos, normalmente requiere la aprobación del comité de ética o de docencia e
+   investigación del hospital. Confirmarlo antes de usar el registro con casos reales.
+2. **Anonimato.** Sexo y edad solos no identifican, pero combinados con fechas y una patología
+   poco frecuente podrían hacerlo en una población chica. Por eso no se guarda la fecha del ECG
+   ni texto libre.
+3. **Sin verificación de referencia.** El registro guarda la región **predicha**. Para validar el
+   algoritmo en pediatría haría falta agregar la localización confirmada en el estudio
+   electrofisiológico (posible siguiente paso).
+4. **Duplicados.** Un mismo paciente analizado dos veces queda como dos registros (ver
+   docs/REGISTRO.md).
+
 ## Dependencias de desarrollo
 
 `npm audit` no informa vulnerabilidades en lo que llega a la app (`--omit=dev`). Sí informa
@@ -46,4 +60,4 @@ versiones mayores siguientes en una tarea aparte, volviendo a correr las pruebas
   (p. ej., Ebstein) ni otras situaciones en las que el algoritmo pierde exactitud.
 - No hay validación en población pediátrica dentro de esta herramienta.
 - Sin corazón 3D, base de datos, inicio de sesión ni despliegue público.
-- No se guarda ningún dato ni imagen; recargar la página borra todo.
+- No se guarda ninguna imagen. Los datos anónimos se guardan solo al pulsar "Guardar en el registro".

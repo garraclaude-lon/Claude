@@ -10,8 +10,16 @@ async function elegir(usuario: Usuario, campo: string, opcion: string) {
   await usuario.click(within(grupo).getByRole('radio', { name: opcion }));
 }
 
+async function llenarPaciente(u: Usuario, sexo = 'Femenino', anios = '7', meses = '6') {
+  await u.click(screen.getByRole('radio', { name: sexo }));
+  await u.type(screen.getByLabelText('Años'), anios);
+  if (meses) await u.type(screen.getByLabelText('Meses'), meses);
+  await u.click(screen.getByRole('button', { name: 'Continuar' }));
+}
+
 async function abrirFormulario(u: Usuario) {
   await u.click(screen.getByRole('button', { name: /Cuestionario guiado/ }));
+  await llenarPaciente(u);
   await u.click(screen.getByRole('button', { name: 'Usar el formulario completo' }));
 }
 
@@ -28,11 +36,34 @@ describe('Pantalla de inicio', () => {
     expect(screen.getByRole('button', { name: /Cuestionario guiado/ })).toBeInTheDocument();
   });
 
-  it('el cuestionario guiado empieza por la onda delta en I', async () => {
+  it('el cuestionario guiado pide primero sexo y edad, y después la onda delta en I', async () => {
     const u = userEvent.setup();
     render(<App obtenerLector={sinIA} />);
     await u.click(screen.getByRole('button', { name: /Cuestionario guiado/ }));
+    expect(screen.getByRole('heading', { name: 'Datos del paciente' })).toBeInTheDocument();
+    await llenarPaciente(u);
+    expect(screen.getByTestId('chip-paciente')).toHaveTextContent('Femenino · 7 a 6 m · Escolar');
     expect(screen.getByTestId('pregunta')).toHaveTextContent('onda delta en I ');
+  });
+
+  it('no avanza sin sexo y edad válidos', async () => {
+    const u = userEvent.setup();
+    render(<App obtenerLector={sinIA} />);
+    await u.click(screen.getByRole('button', { name: /Cuestionario guiado/ }));
+    await u.click(screen.getByRole('button', { name: 'Continuar' }));
+    expect(screen.getByText('Elegí una opción.')).toBeInTheDocument();
+    expect(screen.queryByTestId('pregunta')).not.toBeInTheDocument();
+    await llenarPaciente(u, 'Masculino', '3', '14');
+    expect(screen.getByText('Los meses van de 0 a 11.')).toBeInTheDocument();
+    expect(screen.queryByTestId('pregunta')).not.toBeInTheDocument();
+  });
+
+  it('el formulario completo conserva los datos del paciente', async () => {
+    const u = userEvent.setup();
+    render(<App obtenerLector={sinIA} />);
+    await abrirFormulario(u);
+    expect(screen.getByTestId('chip-paciente')).toHaveTextContent('Femenino');
+    expect(screen.getByRole('button', { name: 'Calcular localización' })).toBeInTheDocument();
   });
 
   it('la versión simple ofrece cámara y carga de archivo', async () => {

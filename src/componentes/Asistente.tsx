@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { aplicarArruda, ENTRADA_VACIA } from '../algoritmo/arruda';
 import { NOMBRES_CAMPOS, NOMBRES_VALORES } from '../algoritmo/catalogo';
-import type { CampoECG, EntradaECG } from '../algoritmo/tipos';
+import type { CampoECG, EntradaECG, ResultadoArruda } from '../algoritmo/tipos';
 import type { PropuestaIA } from '../ia/lectorIA';
 import { CAMPOS } from './campos';
 import { PanelResultado } from './PanelResultado';
@@ -10,6 +10,10 @@ import { VisorECG } from './VisorECG';
 interface Props {
   propuesta?: PropuestaIA | null;
   imagen?: { url: string; nombre: string } | null;
+  /** Texto breve sobre el paciente, arriba de las preguntas. */
+  encabezado?: ReactNode;
+  /** Lo que se muestra debajo del resultado (p. ej., guardar en el registro). */
+  alTerminar?: (d: { resultado: ResultadoArruda; confirmadas: EntradaECG; revisados: CampoECG[] }) => ReactNode;
   onSalir: () => void;
 }
 
@@ -20,7 +24,7 @@ interface Props {
  * Las propuestas de la IA se muestran como sugerencia y nunca se usan sin
  * confirmación explícita.
  */
-export function Asistente({ propuesta, imagen, onSalir }: Props) {
+export function Asistente({ propuesta, imagen, encabezado, alTerminar, onSalir }: Props) {
   const [confirmadas, setConfirmadas] = useState<EntradaECG>(ENTRADA_VACIA);
   const [historial, setHistorial] = useState<CampoECG[]>([]);
 
@@ -56,6 +60,7 @@ export function Asistente({ propuesta, imagen, onSalir }: Props) {
       )}
 
       <div className="asistente-principal">
+        {encabezado}
         {propuesta && (
           <div className="aviso-ia" role="note">
             <strong>Propuesta de la IA (experimental).</strong> La lectura automática no está validada.
@@ -91,6 +96,7 @@ export function Asistente({ propuesta, imagen, onSalir }: Props) {
           <>
             <PanelResultado resultado={resultado} desactualizado={false} onReiniciar={reiniciar} />
             {propuesta && <Concordancia propuesta={propuesta} confirmadas={confirmadas} campos={historial} />}
+            {alTerminar?.({ resultado, confirmadas, revisados: historial })}
           </>
         )}
 

@@ -8,16 +8,16 @@ criterios del ECG de superficie, aplicando de forma determinista el algoritmo de
 > revisarse contra la publicación original antes de cualquier uso asistencial
 > (ver [docs/LIMITACIONES.md](docs/LIMITACIONES.md)). No ingresar datos identificables de pacientes.
 
-## Qué hace esta versión (0.2.0)
+## Qué hace esta versión (0.3.0)
 
 Al abrir la app se elige una de dos versiones:
 
 1. **Versión simple: desde la imagen del ECG.** Se toma una foto con la cámara del celular o la
    tablet, o se sube un archivo JPG, PNG, BMP o PDF (se usa la primera página). La imagen queda en
-   pantalla con zoom. Opcionalmente, Claude propone una lectura **experimental** de cada criterio.
+   pantalla con zoom y se piden **sexo y edad** del paciente. Opcionalmente, Claude propone una lectura **experimental** de cada criterio.
    Después, la revisión guiada es obligatoria: cada dato se confirma a mano y solo los datos
    confirmados entran al algoritmo. Al final se muestra la concordancia entre la IA y la revisión.
-2. **Cuestionario guiado (algoritmo de Arruda).** Hace una pregunta por vez, en el orden del
+2. **Cuestionario guiado (algoritmo de Arruda).** Pide **sexo y edad** y luego hace una pregunta por vez, en el orden del
    algoritmo, y solo pide los datos que necesita la rama. Desde ahí también se puede abrir el
    formulario completo con todos los criterios juntos.
 
@@ -25,8 +25,15 @@ En los dos casos el resultado muestra la región predicha, el recorrido de decis
 criterios usados, los datos faltantes, la referencia y la versión del algoritmo. Distingue
 **región predicha**, **datos insuficientes**, **resultado indeterminado** y **no clasificable**.
 
-No guarda datos ni imágenes, no tiene inicio de sesión, base de datos ni nube. El corazón 3D
-queda para versiones futuras.
+### Registro para estadísticas
+
+Al terminar, **"Guardar en el registro"** guarda un registro anónimo (sexo, edad, grupo etario,
+criterios confirmados, resultado y concordancia con la IA) en la base de datos privada de la
+página publicada en claude.ai. La pantalla de inicio muestra un resumen en vivo por sexo, grupo
+etario y región. **La imagen nunca se guarda.** Formato y cortes etarios: [docs/REGISTRO.md](docs/REGISTRO.md).
+En local (`npm run dev`) no hay base de datos y la app lo indica.
+
+El corazón 3D queda para versiones futuras.
 
 ### Lectura automática con IA
 
@@ -56,6 +63,9 @@ src/
     catalogo.ts       # regiones, nombres, referencia y versión
     arruda.ts         # pasos 1–4 y función aplicarArruda()
   ia/lectorIA.ts      # lectura experimental con Claude y validación de su respuesta
+  registro/
+    paciente.ts       # sexo, edad, grupo etario y validación
+    registro.ts       # formato del registro, resumen y conexión con la base de datos
   imagen/preparar.ts  # abre JPG/PNG/BMP/PDF en el navegador
   componentes/        # interfaz React
     PantallaInicio.tsx      # elección de versión
@@ -63,6 +73,8 @@ src/
     Asistente.tsx           # cuestionario guiado paso a paso
     VisorECG.tsx            # imagen con zoom
     FormularioECG.tsx       # formulario completo
+    FormularioPaciente.tsx  # sexo y edad
+    GuardarRegistro.tsx, ResumenRegistro.tsx
     PanelResultado.tsx
     ExplicacionAlgoritmo.tsx
     campos.ts               # definición de cada criterio
@@ -71,7 +83,9 @@ src/
     arruda.test.ts    # ramas del algoritmo + prueba exhaustiva de 62 500 combinaciones
     App.test.tsx, Asistente.test.tsx, ModoImagen.test.tsx  # interfaz
     lectorIA.test.ts  # validación de la respuesta de la IA y tipos de archivo
+    registro.test.ts, GuardarRegistro.test.tsx  # edad, grupos etarios, registro y guardado
 docs/
   ALGORITMO.md        # reglas implementadas
+  REGISTRO.md         # formato de los datos guardados
   LIMITACIONES.md     # limitaciones y puntos a revisar
 ```

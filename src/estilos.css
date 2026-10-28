@@ -360,3 +360,40 @@ main { display: grid; gap: 16px; }
 .visor-lienzo { overflow: auto; max-height: 70vh; background: #ffffff; }
 .visor-lienzo img { display: block; max-width: none; }
 .visor-lienzo:focus-visible { outline: 2px solid var(--primario); outline-offset: -2px; }
+
+/* ---------- Datos del paciente y registro ---------- */
+.form-paciente { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 16px; display: grid; gap: 8px; max-width: 640px; }
+.form-paciente h2 { margin: 0; }
+.form-paciente .ayuda { margin: 0; }
+.form-paciente .acciones { margin-top: 4px; }
+.edad { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.edad-campo { display: grid; gap: 4px; font-size: 0.9rem; color: var(--texto-suave); }
+.edad-campo input {
+  font: inherit; font-size: 1.1rem; width: 6.5rem; min-height: 44px; padding: 6px 10px;
+  color: var(--texto); background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio);
+  font-variant-numeric: tabular-nums;
+}
+.edad-campo input:focus-visible { outline: 2px solid var(--primario); outline-offset: 1px; }
+.edad-campo input[aria-invalid="true"] { border-color: var(--error); }
+.grupo-etario { padding: 6px 12px; border-radius: 999px; background: var(--acento-suave); color: var(--primario); font-weight: 600; font-size: 0.9rem; }
+.error-campo { margin: 4px 0 0; color: var(--error); font-size: 0.88rem; font-weight: 600; }
+
+.chip-paciente {
+  margin: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px;
+  background: var(--acento-suave); border-radius: var(--radio); padding: 4px 6px 4px 14px; font-size: 0.93rem;
+}
+.chip-paciente .boton-texto { min-height: 36px; }
+
+.columna-resultado { display: grid; gap: 16px; min-width: 0; align-content: start; }
+.guardar-registro { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 16px; display: grid; gap: 8px; }
+.guardar-registro h3 { margin: 0; }
+.guardar-registro .nota, .guardar-registro .acciones { margin: 0; }
+.guardado { margin: 0; padding: 8px 14px; border-radius: var(--radio); background: var(--ok-fondo); color: var(--ok); font-weight: 700; }
+
+.resumen-registro { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 16px; }
+.resumen-total { font-size: 1.05rem; margin: 0 0 12px; }
+.resumen-total strong { font-size: 1.6rem; color: var(--primario); font-variant-numeric: tabular-nums; }
+.resumen-tablas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 16px; }
+.resumen-tabla { min-width: 0; overflow-x: auto; }
+.resumen-tabla caption { text-align: left; font-weight: 700; padding-bottom: 4px; }
+.criterios td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }

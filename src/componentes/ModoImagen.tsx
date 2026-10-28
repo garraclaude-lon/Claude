@@ -1,20 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import { mensajeErrorIA, obtenerLectorClaude, type LectorIA, type PropuestaIA } from '../ia/lectorIA';
 import { ACEPTA_ARCHIVOS, prepararArchivo, type ImagenPreparada } from '../imagen/preparar';
+import type { DatosPaciente } from '../registro/paciente';
+import { construirRegistro, type Repositorio } from '../registro/registro';
 import { Asistente } from './Asistente';
+import { EncabezadoPaciente, FormularioPaciente } from './FormularioPaciente';
+import { GuardarRegistro, nuevaSesion } from './GuardarRegistro';
 import { VisorECG } from './VisorECG';
 
 interface Props {
   onSalir: () => void;
+  repositorio?: Repositorio | null;
   /** Inyectables para pruebas. */
   obtenerLector?: () => Promise<LectorIA | null>;
   preparar?: (f: File) => Promise<ImagenPreparada>;
 }
 
-type Fase = 'cargar' | 'procesando' | 'lista' | 'leyendo' | 'revision';
+type Fase = 'cargar' | 'procesando' | 'paciente' | 'lista' | 'leyendo' | 'revision';
 type EstadoLector = 'comprobando' | 'disponible' | 'no_disponible';
 
-export function ModoImagen({ onSalir, obtenerLector = obtenerLectorClaude, preparar = prepararArchivo }: Props) {
+export function ModoImagen({ onSalir, repositorio = null, obtenerLector = obtenerLectorClaude, preparar = prepararArchivo }: Props) {
   const [fase, setFase] = useState<Fase>('cargar');
   const [imagen, setImagen] = useState<ImagenPreparada | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +27,9 @@ export function ModoImagen({ onSalir, obtenerLector = obtenerLectorClaude, prepa
   const [estadoLector, setEstadoLector] = useState<EstadoLector>('comprobando');
   const [sinDatosPersonales, setSinDatosPersonales] = useState(false);
   const [propuesta, setPropuesta] = useState<PropuestaIA | null>(null);
+  const [paciente, setPaciente] = useState<DatosPaciente | null>(null);
   const control = useRef<AbortController | null>(null);
+  const sesion = useRef(nuevaSesion());
 
   useEffect(() => {
     let vivo = true;
@@ -50,7 +57,7 @@ export function ModoImagen({ onSalir, obtenerLector = obtenerLectorClaude, prepa
     setFase('procesando');
     try {
       setImagen(await preparar(archivo));
-      setFase('lista');
+      setFase(paciente ? 'lista' : 'paciente');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo abrir el archivo.');
       setFase('cargar');
@@ -81,8 +88,24 @@ export function ModoImagen({ onSalir, obtenerLector = obtenerLectorClaude, prepa
     setFase('cargar');
   };
 
-  if (fase === 'revision' && imagen) {
-    return <Asistente propuesta={propuesta} imagen={{ url: imagen.url, nombre: imagen.nombre }} onSalir={onSalir} />;
+  if (fase === 'revision' && imagen && paciente) {
+    return (
+      <Asistente
+        propuesta={propuesta}
+        imagen={{ url: imagen.url, nombre: imagen.nombre }}
+        encabezado={<EncabezadoPaciente datos={paciente} onCambiar={setPaciente} />}
+        alTerminar={({ resultado, confirmadas, revisados }) => (
+          <GuardarRegistro
+            sesion={sesion}
+            registro={construirRegistro({ modo: 'imagen', paciente, criterios: confirmadas, resultado, propuesta, revisados })}
+            paciente={paciente}
+            repositorio={repositorio}
+            onOtroPaciente={onSalir}
+          />
+        )}
+        onSalir={onSalir}
+      />
+    );
   }
 
   return (
@@ -129,8 +152,22 @@ export function ModoImagen({ onSalir, obtenerLector = obtenerLectorClaude, prepa
         </div>
       )}
 
-      {(fase === 'lista' || fase === 'leyendo') && imagen && (
+      {fase === 'paciente' && imagen && (
         <div className="imagen-lista">
+          <VisorECG url={imagen.url} nombre={imagen.nombre} />
+          {imagen.nota && <p className="nota">{imagen.nota}</p>}
+          <FormularioPaciente
+            onConfirmar={(d) => {
+              setPaciente(d);
+              setFase('lista');
+            }}
+          />
+        </div>
+      )}
+
+      {(fase === 'lista' || fase === 'leyendo') && imagen && paciente && (
+        <div className="imagen-lista">
+          <EncabezadoPaciente datos={paciente} onCambiar={setPaciente} />
           <VisorECG url={imagen.url} nombre={imagen.nombre} />
           {imagen.nota && <p className="nota">{imagen.nota}</p>}
 

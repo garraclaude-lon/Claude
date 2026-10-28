@@ -7,6 +7,13 @@ import type { LectorIA } from '../ia/lectorIA';
 import type { ImagenPreparada } from '../imagen/preparar';
 
 const archivo = new File(['x'], 'ecg.png', { type: 'image/png' });
+async function llenarPaciente(u: ReturnType<typeof userEvent.setup>) {
+  await u.click(await screen.findByRole('radio', { name: 'Masculino' }));
+  await u.type(screen.getByLabelText('Años'), '0');
+  await u.type(screen.getByLabelText('Meses'), '4');
+  await u.click(screen.getByRole('button', { name: 'Continuar' }));
+}
+
 const preparar = async (f: File): Promise<ImagenPreparada> => ({ blob: f, url: 'blob:prueba', nombre: f.name });
 
 describe('Modo imagen', () => {
@@ -16,6 +23,10 @@ describe('Modo imagen', () => {
     render(<ModoImagen onSalir={() => {}} obtenerLector={sinIA} preparar={preparar} />);
     await u.upload(screen.getByTestId('input-archivo'), archivo);
     expect(await screen.findByRole('img', { name: /ecg.png/ })).toBeInTheDocument();
+    // Después de subir la imagen se piden sexo y edad.
+    expect(screen.getByRole('heading', { name: 'Datos del paciente' })).toBeInTheDocument();
+    await llenarPaciente(u);
+    expect(screen.getByTestId('chip-paciente')).toHaveTextContent('Masculino · 4 meses · Lactante');
     expect(await screen.findByTestId('ia-no-disponible')).toBeInTheDocument();
     await u.click(screen.getByRole('button', { name: 'Revisar sin IA' }));
     expect(screen.getByTestId('pregunta')).toBeInTheDocument();
@@ -35,6 +46,7 @@ describe('Modo imagen', () => {
     const conIA = async () => lector;
     render(<ModoImagen onSalir={() => {}} obtenerLector={conIA} preparar={preparar} />);
     await u.upload(screen.getByTestId('input-archivo'), archivo);
+    await llenarPaciente(u);
     const boton = await screen.findByRole('button', { name: 'Pedir propuesta a la IA' });
     expect(boton).toBeDisabled();
     await u.click(screen.getByRole('checkbox', { name: /no contiene datos identificables/ }));
@@ -49,6 +61,7 @@ describe('Modo imagen', () => {
     const lector: LectorIA = { leer: async () => Promise.reject({ code: 'rate_limited' }) };
     render(<ModoImagen onSalir={() => {}} obtenerLector={async () => lector} preparar={preparar} />);
     await u.upload(screen.getByTestId('input-archivo'), archivo);
+    await llenarPaciente(u);
     await u.click(await screen.findByRole('checkbox'));
     await u.click(screen.getByRole('button', { name: 'Pedir propuesta a la IA' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('límite de uso');

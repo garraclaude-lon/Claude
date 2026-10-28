@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { aplicarArruda, ENTRADA_VACIA } from './algoritmo/arruda';
 import type { CampoECG, EntradaECG, ResultadoArruda } from './algoritmo/tipos';
 import type { LectorIA } from './ia/lectorIA';
 import type { ImagenPreparada } from './imagen/preparar';
+import type { DatosPaciente } from './registro/paciente';
+import { construirRegistro, obtenerRepositorioClaude, type Repositorio } from './registro/registro';
+import { EncabezadoPaciente, FormularioPaciente } from './componentes/FormularioPaciente';
+import { GuardarRegistro, nuevaSesion } from './componentes/GuardarRegistro';
+import { ResumenRegistro } from './componentes/ResumenRegistro';
 import { Asistente } from './componentes/Asistente';
 import { ExplicacionAlgoritmo } from './componentes/ExplicacionAlgoritmo';
 import { FormularioECG } from './componentes/FormularioECG';
@@ -16,11 +21,28 @@ interface Props {
   /** Inyectables para pruebas del modo imagen. */
   obtenerLector?: () => Promise<LectorIA | null>;
   preparar?: (f: File) => Promise<ImagenPreparada>;
+  obtenerRepositorio?: () => Promise<Repositorio | null>;
 }
 
-export function App({ obtenerLector, preparar }: Props = {}) {
+export function App({ obtenerLector, preparar, obtenerRepositorio = obtenerRepositorioClaude }: Props = {}) {
   const [modo, setModo] = useState<Modo>('inicio');
-  const irInicio = () => setModo('inicio');
+  const [repositorio, setRepositorio] = useState<Repositorio | null>(null);
+  // Se conserva al pasar del cuestionario al formulario completo.
+  const [paciente, setPaciente] = useState<DatosPaciente | null>(null);
+  const irInicio = () => {
+    setPaciente(null);
+    setModo('inicio');
+  };
+
+  useEffect(() => {
+    let vivo = true;
+    obtenerRepositorio()
+      .then((r) => vivo && setRepositorio(r))
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [obtenerRepositorio]);
 
   return (
     <div className="app">
@@ -32,16 +54,24 @@ export function App({ obtenerLector, preparar }: Props = {}) {
       <p className="aviso-investigacion" role="note">
         <strong>Prototipo de investigación.</strong> No reemplaza la evaluación clínica ni el estudio
         electrofisiológico. Las reglas implementadas deben revisarse contra la publicación original
-        antes de cualquier uso asistencial. No ingreses datos identificables de pacientes; no se
-        guarda ningún dato.
+        antes de cualquier uso asistencial. No ingreses datos identificables de pacientes. Solo se
+        guardan datos anónimos (sexo, edad, criterios y resultado) cuando pulsás “Guardar en el
+        registro”; la imagen nunca se guarda.
       </p>
 
       <main>
-        {modo === 'inicio' && <PantallaInicio onElegir={setModo} />}
-        {modo === 'imagen' && <ModoImagen onSalir={irInicio} obtenerLector={obtenerLector} preparar={preparar} />}
+        {modo === 'inicio' && (
+          <>
+            <PantallaInicio onElegir={setModo} />
+            <ResumenRegistro repositorio={repositorio} />
+          </>
+        )}
+        {modo === 'imagen' && (
+          <ModoImagen onSalir={irInicio} repositorio={repositorio} obtenerLector={obtenerLector} preparar={preparar} />
+        )}
         {modo === 'guiado' && (
           <>
-            <Asistente onSalir={irInicio} />
+            <FlujoGuiado repositorio={repositorio} paciente={paciente} setPaciente={setPaciente} onSalir={irInicio} />
             <p className="alternativa">
               ¿Preferís cargar todos los criterios juntos?{' '}
               <button type="button" className="boton-texto" onClick={() => setModo('formulario')}>
@@ -50,7 +80,7 @@ export function App({ obtenerLector, preparar }: Props = {}) {
             </p>
           </>
         )}
-        {modo === 'formulario' && <ModoFormulario onSalir={irInicio} />}
+        {modo === 'formulario' && <ModoFormulario repositorio={repositorio} paciente={paciente} setPaciente={setPaciente} onSalir={irInicio} />}
       </main>
 
       <ExplicacionAlgoritmo />
@@ -62,7 +92,35 @@ export function App({ obtenerLector, preparar }: Props = {}) {
   );
 }
 
-function ModoFormulario({ onSalir }: { onSalir: () => void }) {
+interface PropsModo {
+  repositorio: Repositorio | null;
+  paciente: DatosPaciente | null;
+  setPaciente: (d: DatosPaciente) => void;
+  onSalir: () => void;
+}
+
+function FlujoGuiado({ repositorio, paciente, setPaciente, onSalir }: PropsModo) {
+  const sesion = useRef(nuevaSesion());
+  if (!paciente) return <FormularioPaciente onConfirmar={setPaciente} />;
+  return (
+    <Asistente
+      encabezado={<EncabezadoPaciente datos={paciente} onCambiar={setPaciente} />}
+      alTerminar={({ resultado, confirmadas }) => (
+        <GuardarRegistro
+          sesion={sesion}
+          registro={construirRegistro({ modo: 'guiado', paciente, criterios: confirmadas, resultado })}
+          paciente={paciente}
+          repositorio={repositorio}
+          onOtroPaciente={onSalir}
+        />
+      )}
+      onSalir={onSalir}
+    />
+  );
+}
+
+function ModoFormulario({ repositorio, paciente, setPaciente, onSalir }: PropsModo) {
+  const sesion = useRef(nuevaSesion());
   const [entrada, setEntrada] = useState<EntradaECG>(ENTRADA_VACIA);
   const [resultado, setResultado] = useState<ResultadoArruda | null>(null);
   const [desactualizado, setDesactualizado] = useState(false);
@@ -81,8 +139,11 @@ function ModoFormulario({ onSalir }: { onSalir: () => void }) {
     setDesactualizado(false);
   };
 
+  if (!paciente) return <FormularioPaciente onConfirmar={setPaciente} />;
+
   return (
     <>
+      <EncabezadoPaciente datos={paciente} onCambiar={setPaciente} />
       <div className="contenido">
         <FormularioECG
           entrada={entrada}
@@ -91,7 +152,18 @@ function ModoFormulario({ onSalir }: { onSalir: () => void }) {
           onCalcular={calcular}
           onReiniciar={reiniciar}
         />
-        <PanelResultado resultado={resultado} desactualizado={desactualizado} onReiniciar={reiniciar} />
+        <div className="columna-resultado">
+          <PanelResultado resultado={resultado} desactualizado={desactualizado} onReiniciar={reiniciar} />
+          {resultado && !desactualizado && (
+            <GuardarRegistro
+              sesion={sesion}
+              registro={construirRegistro({ modo: 'formulario', paciente, criterios: entrada, resultado })}
+              paciente={paciente}
+              repositorio={repositorio}
+              onOtroPaciente={onSalir}
+            />
+          )}
+        </div>
       </div>
       <div className="acciones">
         <button type="button" className="boton-texto" onClick={onSalir}>
