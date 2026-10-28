@@ -26,7 +26,7 @@ export function Marca({ className }: P) {
   return (
     <svg className={className} viewBox="0 -11 48 39" width="48" height="39" fill="none" aria-hidden="true">
       <path
-        d="M1 18H4.2C5.8 18 6.4 10.8 8.4 10.8S11 18 12.4 18C14.4 17.7 16.3 15.6 18 11.2L20.6 -9.2L23.8 21.4L25 18.4C26.1 18.6 27 19.2 28 20C29.8 21.6 31 24.8 33.4 24.8C35.6 24.8 36.6 20.6 38.8 18.4C39.4 18.1 40 18 40.7 18H47"
+        d="M1 18H4.2C5.8 18 6.4 10.8 8.4 10.8S11 18 12.4 18C15.2 17.8 17.8 15.6 20.4 10.8L22.8 -9.2L26 21.4L27.6 18.4C28.7 18.6 29.6 19.2 30.6 20C32.4 21.6 33.6 24.8 36 24.8C38.2 24.8 39.2 20.6 41.4 18.4C42 18.1 42.6 18 43.3 18H47"
         stroke="currentColor"
         strokeWidth="2.1"
         strokeLinecap="round"
