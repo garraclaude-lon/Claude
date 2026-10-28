@@ -51,7 +51,7 @@ describe('Modo imagen', () => {
     await llenarPaciente(u);
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     expect(screen.queryByText(/Lectura automática/)).not.toBeInTheDocument();
-    await u.click(await screen.findByRole('button', { name: 'Analizar y localizar vía con IA' }));
+    await u.click(await screen.findByRole('button', { name: 'Localizar vía con IA' }));
     await waitFor(() => expect(leer).toHaveBeenCalledTimes(1));
     expect(await screen.findByTestId('pregunta')).toHaveTextContent('La IA sugiere: negativa');
     expect(screen.getByText(/Trazado algo borroso/)).toBeInTheDocument();
@@ -63,7 +63,7 @@ describe('Modo imagen', () => {
     render(<ModoImagen onSalir={() => {}} obtenerLector={async () => lector} preparar={preparar} />);
     await u.upload(screen.getByTestId('input-archivo'), archivo);
     await llenarPaciente(u);
-    await u.click(await screen.findByRole('button', { name: 'Analizar y localizar vía con IA' }));
+    await u.click(await screen.findByRole('button', { name: 'Localizar vía con IA' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('límite de uso');
     // Si la IA falla, queda la opción de seguir sin IA.
     expect(screen.getByRole('button', { name: 'Continuar sin IA' })).toBeEnabled();

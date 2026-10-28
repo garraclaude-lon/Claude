@@ -385,7 +385,7 @@ export function ModoImagen({
                   onClick={() => verificarYSeguir(pedirIA)}
                 >
                   <IconoAnalizar />
-                  {estadoLector === 'comprobando' ? 'Preparando…' : revisionPendiente || verificando ? 'Revisando la imagen…' : 'Analizar y localizar vía con IA'}
+                  {estadoLector === 'comprobando' ? 'Preparando…' : revisionPendiente || verificando ? 'Revisando la imagen…' : 'Localizar vía con IA'}
                 </button>
                 {/* Si la IA falla, queda la opción de seguir con la revisión guiada. */}
                 {error && (
@@ -480,12 +480,13 @@ function BloqueoDatosPersonales({ onTapar, onCerrar }: { onTapar: () => void; on
   );
 }
 
+/** Destellos: el símbolo habitual de la inteligencia artificial. */
 function IconoAnalizar() {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M2 12h4l2-5 3 10 2-6 1.5 3H18" />
-      <circle cx="19" cy="15" r="2.5" />
-      <path d="M21 17l1.5 1.5" />
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+      <path d="M10 2.5c.4 3.9 2.6 6.1 6.5 6.5-3.9.4-6.1 2.6-6.5 6.5-.4-3.9-2.6-6.1-6.5-6.5 3.9-.4 6.1-2.6 6.5-6.5Z" />
+      <path d="M18 13c.25 2.3 1.45 3.5 3.75 3.75-2.3.25-3.5 1.45-3.75 3.75-.25-2.3-1.45-3.5-3.75-3.75 2.3-.25 3.5-1.45 3.75-3.75Z" />
+      <path d="M5.5 15.5c.15 1.4.85 2.1 2.25 2.25-1.4.15-2.1.85-2.25 2.25-.15-1.4-.85-2.1-2.25-2.25 1.4-.15 2.1-.85 2.25-2.25Z" />
     </svg>
   );
 }

@@ -66,7 +66,7 @@ seguir. También se puede tapar cualquier zona a mano. Detalles y límites en
 ### Lectura automática con IA
 
 - Solo funciona en la versión publicada en claude.ai: usa la cuenta de Claude de quien la abre,
-  con su permiso. El botón principal es **"Analizar y localizar vía con IA"**. Al ejecutarla en
+  con su permiso. El botón principal es **"Localizar vía con IA"**. Al ejecutarla en
   local (`npm run dev`), o si la IA falla, aparece **"Continuar sin IA"** para seguir con la
   revisión guiada.
 - Antes de pasar al siguiente paso (lectura con IA o revisión guiada), la app vuelve a revisar la imagen. Si todavía detecta un nombre o apellido, no deja seguir y muestra "No puedo continuar porque contiene datos personales del paciente."

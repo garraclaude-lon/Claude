@@ -132,7 +132,7 @@ describe('Datos personales en la imagen', () => {
     await u.click(screen.getByRole('radio', { name: 'Masculino' }));
     await u.type(screen.getByLabelText('Años'), '5');
     await u.click(screen.getByRole('button', { name: 'Continuar' }));
-    await u.click(screen.getByRole('button', { name: 'Analizar y localizar vía con IA' }));
+    await u.click(screen.getByRole('button', { name: 'Localizar vía con IA' }));
     await waitFor(() => expect(leer).toHaveBeenCalledWith(anonima, expect.anything()));
     // La revisión de control se hizo sobre la imagen anonimizada.
     expect(lector.detectarDatosPersonales).toHaveBeenLastCalledWith(anonima, expect.anything());
@@ -194,7 +194,7 @@ describe('Datos personales en la imagen', () => {
     await u.click(screen.getByRole('button', { name: 'Continuar' }));
     expect(screen.getByRole('button', { name: 'Revisando la imagen…' })).toBeDisabled();
     terminar({ hayDatosPersonales: false, zonas: [] });
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Analizar y localizar vía con IA' })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Localizar vía con IA' })).toBeEnabled());
   });
 
   it('si al seguir todavía detecta datos personales, no avanza y muestra el aviso', async () => {
@@ -209,14 +209,14 @@ describe('Datos personales en la imagen', () => {
     await u.type(screen.getByLabelText('Años'), '3');
     await u.click(screen.getByRole('button', { name: 'Continuar' }));
 
-    await u.click(screen.getByRole('button', { name: 'Analizar y localizar vía con IA' }));
+    await u.click(screen.getByRole('button', { name: 'Localizar vía con IA' }));
     const aviso = await screen.findByTestId('bloqueo-datos');
     expect(within(aviso).getByRole('alertdialog')).toHaveTextContent('No puedo continuar porque contiene datos personales del paciente.');
     expect(leer).not.toHaveBeenCalled();
     await u.click(within(aviso).getByRole('button', { name: 'Cerrar' }));
 
     // Insistir vuelve a frenar.
-    await u.click(screen.getByRole('button', { name: 'Analizar y localizar vía con IA' }));
+    await u.click(screen.getByRole('button', { name: 'Localizar vía con IA' }));
     const aviso2 = await screen.findByTestId('bloqueo-datos');
     expect(screen.queryByTestId('pregunta')).not.toBeInTheDocument();
     // Desde el aviso se puede ir directo a tapar a mano.
@@ -234,7 +234,7 @@ describe('Datos personales en la imagen', () => {
     await u.click(screen.getByRole('radio', { name: 'Masculino' }));
     await u.type(screen.getByLabelText('Años'), '4');
     await u.click(screen.getByRole('button', { name: 'Continuar' }));
-    await u.click(screen.getByRole('button', { name: 'Analizar y localizar vía con IA' }));
+    await u.click(screen.getByRole('button', { name: 'Localizar vía con IA' }));
     expect(await screen.findByTestId('pregunta')).toBeInTheDocument();
     expect(screen.queryByTestId('bloqueo-datos')).not.toBeInTheDocument();
   });
@@ -248,7 +248,7 @@ describe('Datos personales en la imagen', () => {
     await u.click(screen.getByRole('radio', { name: 'Masculino' }));
     await u.type(screen.getByLabelText('Años'), '1');
     await u.click(screen.getByRole('button', { name: 'Continuar' }));
-    await u.click(screen.getByRole('button', { name: 'Analizar y localizar vía con IA' }));
+    await u.click(screen.getByRole('button', { name: 'Localizar vía con IA' }));
     expect(await screen.findByTestId('pregunta')).toBeInTheDocument();
     expect(detectarDatosPersonales).toHaveBeenCalledTimes(1);
   });
