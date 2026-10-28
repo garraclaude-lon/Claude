@@ -223,6 +223,21 @@ describe('Datos personales en la imagen', () => {
     expect(screen.queryByTestId('bloqueo-datos')).not.toBeInTheDocument();
   });
 
+  it('al seguir solo frena por nombre o apellido, no por otros datos', async () => {
+    const u = userEvent.setup();
+    const { lector } = lectorCon(() => Promise.reject({ code: 'upstream_error' }));
+    render(<ModoImagen onSalir={() => {}} obtenerLector={async () => lector} preparar={preparar} editor={editorFalso()} />);
+    await subir(u);
+    await screen.findByText(/No se pudo confirmar automáticamente/);
+    (lector.detectarDatosPersonales as ReturnType<typeof vi.fn>).mockImplementation(async () => ({ hayDatosPersonales: true, zonas: [{ tipo: 'documento', x: 0, y: 0, ancho: 0.2, alto: 0.05 }] }));
+    await u.click(screen.getByRole('radio', { name: 'Masculino' }));
+    await u.type(screen.getByLabelText('Años'), '4');
+    await u.click(screen.getByRole('button', { name: 'Continuar' }));
+    await u.click(screen.getByRole('button', { name: 'Revisar sin IA' }));
+    expect(await screen.findByTestId('pregunta')).toBeInTheDocument();
+    expect(screen.queryByTestId('bloqueo-datos')).not.toBeInTheDocument();
+  });
+
   it('si la imagen ya dio limpia, avanza sin volver a revisarla', async () => {
     const u = userEvent.setup();
     const { lector, detectarDatosPersonales } = lectorCon({ hayDatosPersonales: false, zonas: [] });

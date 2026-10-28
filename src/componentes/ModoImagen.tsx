@@ -181,7 +181,7 @@ export function ModoImagen({
 
   /**
    * Antes de pasar al siguiente paso se vuelve a revisar la imagen (salvo que esta
-   * misma versión ya haya dado limpia). Si todavía hay datos personales, no se avanza.
+   * misma versión ya haya dado limpia). Si todavía se ve un nombre o apellido, no se avanza.
    */
   const verificarYSeguir = async (siguiente: () => void) => {
     if (!imagen) return;
@@ -192,11 +192,12 @@ export function ModoImagen({
     try {
       const d = await lector.detectarDatosPersonales(imagen.blob, ctl.signal);
       if (ctl.signal.aborted) return;
-      if (d.hayDatosPersonales) {
+      // Solo frena si ve un nombre o un apellido del paciente.
+      if (d.zonas.some((z) => z.tipo === 'nombre' || z.tipo === 'apellido')) {
         setBloqueado(true);
         return;
       }
-      imagenLimpia.current = imagen.blob;
+      if (!d.hayDatosPersonales) imagenLimpia.current = imagen.blob;
     } catch (e) {
       if (ctl.signal.aborted) return;
       // Si la revisión no responde, se sigue: el aviso pide revisar y tapar a mano.
