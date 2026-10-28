@@ -83,7 +83,7 @@ export function PanelResultado({ resultado, desactualizado, onReiniciar }: Props
             <path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Z" />
             <path d="M4 7.5 12 12l8-4.5M12 12v9" />
           </svg>
-          3D location
+          Ubicación 3D
         </button>
       )}
       {ver3D && <Visor3D regiones={r.regiones} onCerrar={() => setVer3D(false)} />}

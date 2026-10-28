@@ -800,7 +800,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
         try {
           d.dispose();
         } catch (e) {
-          console.warn('3D location: no se pudo liberar un recurso', e);
+          console.warn('Ubicación 3D: no se pudo liberar un recurso', e);
         }
       }
     },

@@ -11,12 +11,12 @@ import referencias from '../corazon3d/modelo/referencias.json';
 
 const e = (p: Partial<EntradaECG>): EntradaECG => ({ ...ENTRADA_VACIA, ...p });
 
-describe('Botón 3D location', () => {
+describe('Botón Ubicación 3D', () => {
   it('aparece con región predicha y abre el visor (sin WebGL en el entorno de pruebas)', async () => {
     const u = userEvent.setup();
     render(<PanelResultado resultado={aplicarArruda(e({ deltaI: 'negativa', deltaAVF: 'positiva' }))} desactualizado={false} onReiniciar={() => {}} />);
-    await u.click(screen.getByRole('button', { name: '3D location' }));
-    const visor = screen.getByRole('dialog', { name: '3D location' });
+    await u.click(screen.getByRole('button', { name: 'Ubicación 3D' }));
+    const visor = screen.getByRole('dialog', { name: 'Ubicación 3D' });
     expect(visor).toHaveTextContent('Vía accesoria predicha: LL/LAL');
     expect(within(visor).getByTestId('sin-webgl')).toBeInTheDocument();
     expect(visor).toHaveTextContent('adulto de referencia, no del paciente');
@@ -29,7 +29,7 @@ describe('Botón 3D location', () => {
   it('tiene interruptores para referencias anatómicas y arterias coronarias', async () => {
     const u = userEvent.setup();
     render(<PanelResultado resultado={aplicarArruda(e({ deltaI: 'negativa', deltaAVF: 'positiva' }))} desactualizado={false} onReiniciar={() => {}} />);
-    await u.click(screen.getByRole('button', { name: '3D location' }));
+    await u.click(screen.getByRole('button', { name: 'Ubicación 3D' }));
     // Siempre abre en la vista frontal
     expect(screen.getByRole('button', { name: 'Frontal' })).toHaveAttribute('aria-pressed', 'true');
     for (const nombre of ['Referencias anatómicas', 'Vasos coronarios']) {
@@ -46,7 +46,7 @@ describe('Botón 3D location', () => {
     const u = userEvent.setup();
     const r = aplicarArruda(e({ deltaI: 'positiva', rsV1: 'r_menor_igual_s', deltaII: 'positiva', deltaV1: 'negativa', deltaAVF: 'isoelectrica' }));
     render(<PanelResultado resultado={r} desactualizado={false} onReiniciar={() => {}} />);
-    await u.click(screen.getByRole('button', { name: '3D location' }));
+    await u.click(screen.getByRole('button', { name: 'Ubicación 3D' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('PSTA o PSMA');
     await u.click(screen.getByRole('button', { name: 'Cerrar' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -54,9 +54,9 @@ describe('Botón 3D location', () => {
 
   it('no aparece sin región predicha y se desactiva si el resultado quedó desactualizado', () => {
     const { rerender } = render(<PanelResultado resultado={aplicarArruda(ENTRADA_VACIA)} desactualizado={false} onReiniciar={() => {}} />);
-    expect(screen.queryByRole('button', { name: '3D location' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Ubicación 3D' })).not.toBeInTheDocument();
     rerender(<PanelResultado resultado={aplicarArruda(e({ deltaI: 'negativa', deltaAVF: 'positiva' }))} desactualizado onReiniciar={() => {}} />);
-    expect(screen.getByRole('button', { name: '3D location' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Ubicación 3D' })).toBeDisabled();
   });
 });
 

@@ -40,9 +40,9 @@ En local (`npm run dev`) no hay base de datos y la app lo indica.
 
 El corazón 3D queda para versiones futuras.
 
-### 3D location
+### Ubicación 3D
 
-En el resultado, el botón **3D location** abre un **corazón anatómico 3D** semitransparente
+En el resultado, el botón **Ubicación 3D** abre un **corazón anatómico 3D** semitransparente
 (modelo Z-Anatomy, basado en BodyParts3D): cuatro cámaras con músculos papilares, válvulas,
 coronarias, venas cardíacas, seno coronario, aorta, arteria pulmonar y venas cavas. Late, y el
 sistema de conducción (nódulo sinusal, vías internodales, Bachmann, nódulo AV, His, ramas y
@@ -107,7 +107,7 @@ src/
     VisorECG.tsx            # imagen con zoom
     AlertaPrivacidad.tsx    # alerta roja de datos personales detectados
     TaparZonas.tsx          # tapar zonas a mano
-    Visor3D.tsx             # ventana "3D location"
+    Visor3D.tsx             # ventana "Ubicación 3D"
     FormularioECG.tsx       # formulario completo
     FormularioPaciente.tsx  # sexo y edad
     DiagramaAnillos.tsx     # esquema de los anillos AV (región predicha y sitio del EEF)

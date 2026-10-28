@@ -655,7 +655,7 @@ main { display: grid; gap: 20px; }
 .estado-privacidad-peligro { color: var(--error); font-weight: 500; }
 .estado-privacidad-peligro::before { background: var(--error); }
 
-/* ---------- 3D location ---------- */
+/* ---------- Ubicación 3D ---------- */
 .boton-3d {
   justify-self: start; display: inline-flex; align-items: center; gap: 10px; margin-top: 14px;
   min-height: 46px; padding: 10px 22px 10px 18px; border: none; border-radius: var(--pildora);

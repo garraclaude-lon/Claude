@@ -18,7 +18,7 @@
 7. **Definición de isoeléctrica.** La herramienta no mide el ECG: depende de que el usuario
    evalúe correctamente los primeros 20 ms. No hay ayuda visual ni umbrales de amplitud.
 
-## Modelo 3D (3D location)
+## Modelo 3D (Ubicación 3D)
 
 1. **Anatomía de referencia, no del paciente.** El corazón es el de un adulto (Z-Anatomy /
    BodyParts3D). No hay un modelo pediátrico ni datos de TC o RM del paciente.

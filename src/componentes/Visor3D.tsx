@@ -62,7 +62,7 @@ export function Visor3D({ regiones, onCerrar }: Props) {
         setEstado('listo');
       })
       .catch((e) => {
-        console.error('3D location:', e);
+        console.error('Ubicación 3D:', e);
         if (vivo) setEstado('error');
       });
     return () => {
@@ -87,7 +87,7 @@ export function Visor3D({ regiones, onCerrar }: Props) {
       <div className="modal-3d" role="dialog" aria-modal="true" aria-labelledby="titulo-3d" data-testid="visor-3d">
         <header className="modal-3d-cabecera">
           <div>
-            <h2 id="titulo-3d">3D location</h2>
+            <h2 id="titulo-3d">Ubicación 3D</h2>
             <p className="modal-3d-sub">
               Vía accesoria predicha: <strong>{nombres}</strong>
               {regiones.length === 1 && <> · {regiones[0].descripcion}</>}
