@@ -1,3 +1,4 @@
+import type { PointerEvent, ReactNode } from 'react';
 import { IconoArbol, IconoCamara, IconoFlecha } from './Iconos';
 
 interface Props {
@@ -9,27 +10,74 @@ export function PantallaInicio({ onElegir }: Props) {
     <section className="inicio" aria-labelledby="titulo-inicio">
       <h2 id="titulo-inicio">¿Cómo querés trabajar?</h2>
       <div className="inicio-opciones">
-        <button type="button" className="tarjeta-modo" onClick={() => onElegir('imagen')}>
-          <span className="tarjeta-icono"><IconoCamara /></span>
-          <span className="tarjeta-etiqueta">Versión simple</span>
-          <span className="tarjeta-titulo">Desde la imagen del ECG</span>
-          <span className="tarjeta-desc">
-            Sacá una foto con la cámara o subí el ECG (JPG, PNG, BMP o PDF). La IA propone una lectura
-            experimental y vos confirmás cada criterio mirando el trazado.
-          </span>
-          <span className="tarjeta-ir" aria-hidden="true"><IconoFlecha /></span>
-        </button>
-        <button type="button" className="tarjeta-modo" onClick={() => onElegir('guiado')}>
-          <span className="tarjeta-icono"><IconoArbol /></span>
-          <span className="tarjeta-etiqueta">Algoritmo de Arruda</span>
-          <span className="tarjeta-titulo">Cuestionario guiado</span>
-          <span className="tarjeta-desc">
-            Te pregunta, paso a paso y en el orden del algoritmo, cómo ves la onda delta en cada
-            derivación. Solo pide los datos que necesita la rama.
-          </span>
-          <span className="tarjeta-ir" aria-hidden="true"><IconoFlecha /></span>
-        </button>
+        <BotonModo
+          icono={<IconoCamara />}
+          tono="azul"
+          etiqueta="Versión simple"
+          titulo="Desde la imagen del ECG"
+          onClick={() => onElegir('imagen')}
+        >
+          Sacá una foto con la cámara o subí el ECG (JPG, PNG, BMP o PDF). La IA propone una lectura
+          experimental y vos confirmás cada criterio mirando el trazado.
+        </BotonModo>
+        <BotonModo
+          icono={<IconoArbol />}
+          tono="verde"
+          etiqueta="Algoritmo de Arruda"
+          titulo="Cuestionario guiado"
+          onClick={() => onElegir('guiado')}
+        >
+          Te pregunta, paso a paso y en el orden del algoritmo, cómo ves la onda delta en cada
+          derivación. Solo pide los datos que necesita la rama.
+        </BotonModo>
       </div>
     </section>
+  );
+}
+
+interface PropsBoton {
+  icono: ReactNode;
+  tono: 'azul' | 'verde';
+  etiqueta: string;
+  titulo: string;
+  children: ReactNode;
+  onClick: () => void;
+}
+
+/**
+ * Botón grande con relieve: se inclina levemente hacia el puntero y se
+ * hunde al presionarlo. Sin movimiento si el sistema pide reducirlo.
+ */
+function BotonModo({ icono, tono, etiqueta, titulo, children, onClick }: PropsBoton) {
+  const inclinar = (e: PointerEvent<HTMLButtonElement>) => {
+    if (e.pointerType !== 'mouse') return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5;
+    const y = (e.clientY - r.top) / r.height - 0.5;
+    e.currentTarget.style.setProperty('--ry', `${(x * 7).toFixed(2)}deg`);
+    e.currentTarget.style.setProperty('--rx', `${(-y * 7).toFixed(2)}deg`);
+    e.currentTarget.style.setProperty('--brillo-x', `${((x + 0.5) * 100).toFixed(0)}%`);
+    e.currentTarget.style.setProperty('--brillo-y', `${((y + 0.5) * 100).toFixed(0)}%`);
+  };
+  const enderezar = (e: PointerEvent<HTMLButtonElement>) => {
+    for (const p of ['--rx', '--ry', '--brillo-x', '--brillo-y']) e.currentTarget.style.removeProperty(p);
+  };
+
+  return (
+    <button
+      type="button"
+      className={`tarjeta-modo tono-${tono}`}
+      onClick={onClick}
+      onPointerMove={inclinar}
+      onPointerLeave={enderezar}
+    >
+      <span className="tarjeta-icono" aria-hidden="true">{icono}</span>
+      <span className="tarjeta-etiqueta">{etiqueta}</span>
+      <span className="tarjeta-titulo">{titulo}</span>
+      <span className="tarjeta-desc">{children}</span>
+      <span className="tarjeta-ir" aria-hidden="true">
+        Comenzar <IconoFlecha />
+      </span>
+    </button>
   );
 }

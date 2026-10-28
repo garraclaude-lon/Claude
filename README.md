@@ -8,7 +8,7 @@ criterios del ECG de superficie, aplicando de forma determinista el algoritmo de
 > revisarse contra la publicación original antes de cualquier uso asistencial
 > (ver [docs/LIMITACIONES.md](docs/LIMITACIONES.md)). No ingresar datos identificables de pacientes.
 
-## Qué hace esta versión (0.4.1)
+## Qué hace esta versión (0.4.2)
 
 Al abrir la app se elige una de dos versiones:
 
