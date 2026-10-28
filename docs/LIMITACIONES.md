@@ -20,16 +20,23 @@
 
 ## Modelo 3D (3D location)
 
-1. **Es esquemático.** Las cámaras son formas simplificadas y el sistema de conducción sigue un
-   recorrido aproximado. No es una reconstrucción anatómica ni del paciente: no hay imágenes de
-   TC o RM detrás.
-2. **El LED marca la región predicha**, ubicada con los mismos ángulos que el esquema 2D de los
-   anillos AV (proyección OAI aproximada). Esa correspondencia también debe revisarla el equipo
-   de electrofisiología.
-3. **Tiempos ilustrativos.** El ciclo dura 0,7 s (unos 86 lpm). Los retrasos (nódulo AV, His,
-   ramas) y el cruce por la vía accesoria son didácticos, no medidos.
-4. **Requiere WebGL.** En equipos sin aceleración gráfica puede ir lento; si no hay WebGL, se avisa
+1. **Anatomía de referencia, no del paciente.** El corazón es el de un adulto (Z-Anatomy /
+   BodyParts3D). No hay un modelo pediátrico ni datos de TC o RM del paciente.
+2. **Sistema de conducción aproximado.** Los nódulos y trayectos se calcularon automáticamente
+   sobre la malla: el nódulo sinusal en la unión de la vena cava superior con la AD; el AV entre el
+   ostium del seno coronario y la valva septal tricuspídea; el His hacia la cresta del septum; las
+   ramas por el septum hasta las puntas. Son ilustrativos, no anatómicamente exactos.
+3. **Anillos AV estimados.** Se ajustaron a la zona de contacto entre aurícula y ventrículo. El LED
+   usa los mismos ángulos que el esquema 2D. Esa correspondencia debe revisarla el equipo de
+   electrofisiología.
+4. **Tiempos ilustrativos.** El ciclo dura 0,75 s (unos 80 lpm). Los retrasos y el cruce por la vía
+   accesoria son didácticos, no medidos.
+5. **Requiere WebGL.** En equipos sin aceleración gráfica puede ir lento; si no hay WebGL, se avisa
    y queda el esquema 2D.
+6. **Licencia.** El modelo se distribuye bajo CC BY-SA 4.0 con atribución visible en el visor
+   (docs/LICENCIA-MODELO-3D.md). El paquete del que se obtuvo marca su propia revisión de licencias
+   como "pendiente"; las licencias de origen (Z-Anatomy CC BY-SA 4.0, BodyParts3D CC BY 4.0) son
+   públicas.
 
 ## Detección de datos personales en la imagen
 

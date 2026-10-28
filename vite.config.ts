@@ -6,10 +6,16 @@ import react from '@vitejs/plugin-react';
 // para poder publicarlo como página única en claude.ai.
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  assetsInclude: ['**/*.glb'],
   server: { host: '127.0.0.1', port: 5173 },
   build:
     mode === 'artefacto'
-      ? { outDir: 'dist-artefacto', rollupOptions: { output: { inlineDynamicImports: true } } }
+      ? {
+          outDir: 'dist-artefacto',
+          // Todo embebido (también el modelo 3D) para publicar una sola página.
+          assetsInlineLimit: () => true,
+          rollupOptions: { output: { inlineDynamicImports: true } },
+        }
       : {},
   test: {
     environment: 'jsdom',

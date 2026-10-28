@@ -7,6 +7,7 @@ import type { CodigoRegion, EntradaECG } from '../algoritmo/tipos';
 import { SEGMENTOS } from '../componentes/DiagramaAnillos';
 import { PanelResultado } from '../componentes/PanelResultado';
 import { ubicacionRegion } from '../corazon3d/escena';
+import referencias from '../corazon3d/modelo/referencias.json';
 
 const e = (p: Partial<EntradaECG>): EntradaECG => ({ ...ENTRADA_VACIA, ...p });
 
@@ -18,7 +19,9 @@ describe('Botón 3D location', () => {
     const visor = screen.getByRole('dialog', { name: '3D location' });
     expect(visor).toHaveTextContent('Vía accesoria predicha: LL/LAL');
     expect(within(visor).getByTestId('sin-webgl')).toBeInTheDocument();
-    expect(visor).toHaveTextContent('no es una reconstrucción anatómica ni del paciente');
+    expect(visor).toHaveTextContent('adulto de referencia, no del paciente');
+    expect(visor).toHaveTextContent('Z-Anatomy');
+    expect(visor).toHaveTextContent('CC BY-SA 4.0');
     await u.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
@@ -41,28 +44,54 @@ describe('Botón 3D location', () => {
   });
 });
 
-describe('Ubicación del LED en el modelo 3D', () => {
-  it('cada región tiene una ubicación sobre el anillo que le corresponde', () => {
-    const TA = { x: -1.0, z: 0.15, r: 0.8 };
-    const MA = { x: 0.95, z: -0.15, r: 0.75 };
+describe('Ubicación del LED en el modelo anatómico', () => {
+  const A = referencias.anillos;
+  const rel = (c: CodigoRegion, a: typeof A.mitral) => {
+    const p = ubicacionRegion(c);
+    const d = [p.x - a.centro[0], p.y - a.centro[1], p.z - a.centro[2]];
+    const dot = (u: number[]) => d[0] * u[0] + d[1] * u[1] + d[2] * u[2];
+    return { dist: Math.hypot(...d), arriba: dot(a.arriba), derecha: dot(a.derecha) };
+  };
+
+  it('las regiones de los anillos quedan sobre su anillo', () => {
     for (const codigo of Object.keys(REGIONES) as CodigoRegion[]) {
       const s = SEGMENTOS[codigo]![0];
-      const p = ubicacionRegion(codigo);
-      if (s.anillo === 'sc') {
-        expect(Math.hypot(p.x - MA.x, p.z - MA.z)).toBeGreaterThan(MA.r);
-        expect(p.y).toBeLessThan(0);
-      } else {
-        const a = s.anillo === 't' ? TA : MA;
-        expect(Math.hypot(p.x - a.x, p.z - a.z)).toBeCloseTo(a.r + 0.02, 5);
-        expect(p.y).toBe(0);
-      }
+      if (s.anillo === 'sc' || codigo === 'PSTA_CSOS') continue;
+      const a = s.anillo === 't' ? A.tricuspide : A.mitral;
+      expect(rel(codigo, a).dist).toBeCloseTo(a.radio, 3);
     }
   });
 
-  it('lado izquierdo en el mitral, lado derecho en la tricúspide', () => {
-    expect(ubicacionRegion('LL_LAL').x).toBeGreaterThan(0.95);
-    expect(ubicacionRegion('RL').x).toBeLessThan(-1.0);
-    // Anterior (+z) frente a posterior (−z)
-    expect(ubicacionRegion('RA_RAL').z).toBeGreaterThan(ubicacionRegion('RP_RPL').z);
+  it('respeta la orientación del esquema 2D', () => {
+    // Pared libre izquierda hacia la izquierda del paciente; pared libre derecha hacia la derecha
+    expect(rel('LL_LAL', A.mitral).derecha).toBeGreaterThan(0);
+    expect(rel('RL', A.tricuspide).derecha).toBeLessThan(0);
+    // Anterior arriba, posterior abajo
+    expect(rel('RA_RAL', A.tricuspide).arriba).toBeGreaterThan(rel('RP_RPL', A.tricuspide).arriba);
+    expect(rel('LL_LAL', A.mitral).arriba).toBeGreaterThan(rel('LP_LPL', A.mitral).arriba);
+    // Septales de la tricúspide del lado del septum (hacia el mitral)
+    expect(rel('MSTA', A.tricuspide).derecha).toBeGreaterThan(0);
+  });
+
+  it('la vía subepicárdica está en el seno coronario y PSTA/CSOs junto al ostium', () => {
+    expect(ubicacionRegion('PS_SUBEPI').toArray()).toEqual(referencias.sitios.subepicardica);
+    const p = ubicacionRegion('PSTA_CSOS');
+    const o = referencias.sitios.ostium;
+    const anillo = rel('PSTA', A.tricuspide);
+    expect(Math.hypot(p.x - o[0], p.y - o[1], p.z - o[2])).toBeLessThan(anillo.dist + 3);
+  });
+});
+
+describe('Modelo anatómico extraído', () => {
+  it('tiene el sistema de conducción completo y orientación coherente', () => {
+    for (const t of ['internodal_anterior', 'internodal_medio', 'internodal_posterior', 'bachmann', 'his', 'rama_derecha', 'rama_izquierda']) {
+      expect((referencias.trayectos as Record<string, unknown[]>)[t].length).toBeGreaterThan(2);
+    }
+    expect(referencias.purkinje.length).toBeGreaterThanOrEqual(5);
+    // Ventrículo izquierdo a la izquierda del paciente (+x); nódulo sinusal arriba del nódulo AV
+    expect(referencias.centros.ventriculo_izquierdo[0]).toBeGreaterThan(referencias.centros.ventriculo_derecho[0]);
+    expect(referencias.nodos.sinusal[1]).toBeGreaterThan(referencias.nodos.auriculoventricular[1]);
+    // Mitral a la izquierda de la tricúspide
+    expect(referencias.anillos.mitral.centro[0]).toBeGreaterThan(referencias.anillos.tricuspide.centro[0]);
   });
 });

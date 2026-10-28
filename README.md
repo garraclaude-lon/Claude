@@ -8,7 +8,7 @@ criterios del ECG de superficie, aplicando de forma determinista el algoritmo de
 > revisarse contra la publicación original antes de cualquier uso asistencial
 > (ver [docs/LIMITACIONES.md](docs/LIMITACIONES.md)). No ingresar datos identificables de pacientes.
 
-## Qué hace esta versión (0.6.0)
+## Qué hace esta versión (0.7.0)
 
 Al abrir la app se elige una de dos versiones:
 
@@ -42,12 +42,19 @@ El corazón 3D queda para versiones futuras.
 
 ### 3D location
 
-En el resultado, el botón **3D location** abre un corazón 3D **esquemático** semitransparente
-(cámaras, anillos AV, aorta y arteria pulmonar) que late, con el sistema de conducción (nódulo
-sinusal, vías internodales, nódulo AV, haz de His, ramas y Purkinje) conduciendo el impulso, y un
-**LED rojo** en la región predicha. El impulso también cruza por la vía accesoria antes que por el
-His (preexcitación). Vistas frontal y de anillos AV (igual que el esquema 2D), velocidad normal o
-lenta, pausa, y giro y zoom con el mouse o los dedos. Requiere WebGL.
+En el resultado, el botón **3D location** abre un **corazón anatómico 3D** semitransparente
+(modelo Z-Anatomy, basado en BodyParts3D): cuatro cámaras con músculos papilares, válvulas,
+coronarias, venas cardíacas, seno coronario, aorta, arteria pulmonar y venas cavas. Late, y el
+sistema de conducción (nódulo sinusal, vías internodales, Bachmann, nódulo AV, His, ramas y
+Purkinje), trazado sobre la anatomía, conduce el impulso. Un **LED rojo** marca la región predicha;
+el impulso cruza por la vía accesoria antes que por el His (preexcitación).
+
+Vistas: **Vía accesoria** (gira el corazón para dejar el LED de frente), **Frontal** y **Anillos AV**
+(igual que el esquema 2D). Velocidad normal o lenta, pausa, giro con el mouse o con un dedo y zoom
+con la rueda o pellizcando. Requiere WebGL.
+
+Licencia del modelo: CC BY-SA 4.0 ([docs/LICENCIA-MODELO-3D.md](docs/LICENCIA-MODELO-3D.md)).
+Se regenera con `scripts/extraer-corazon.mjs`.
 
 ### Protección de datos personales en la imagen
 
@@ -73,6 +80,7 @@ npm run dev      # abre http://127.0.0.1:5173
 npm test         # pruebas automatizadas (Vitest)
 npm run build    # compilación de producción en dist/
 npm run build:artefacto  # página única para publicar en claude.ai (dist-artefacto/)
+node scripts/extraer-corazon.mjs <datos>  # regenera el modelo 3D (ver el script)
 ```
 
 ## Estructura
@@ -90,7 +98,8 @@ src/
     eef.ts            # sitios del EEF, concordancia con Arruda y códigos de registro
   imagen/preparar.ts  # abre JPG/PNG/BMP/PDF en el navegador
   imagen/anonimizar.ts  # ocultar o recortar zonas con datos personales
-  corazon3d/escena.ts   # corazón 3D esquemático (three.js)
+  corazon3d/escena.ts   # corazón 3D anatómico (three.js)
+  corazon3d/modelo/     # corazon.glb + referencias.json (CC BY-SA 4.0)
   componentes/        # interfaz React
     PantallaInicio.tsx      # elección de versión
     ModoImagen.tsx          # cámara / archivo + propuesta de la IA

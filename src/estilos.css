@@ -720,4 +720,6 @@ main { display: grid; gap: 20px; }
   .modal-3d { padding: 14px 12px 12px; border-radius: 20px; gap: 10px; }
   .modal-3d-leyenda { font-size: 0.75rem; }
 }
-@media (max-width: 600px) { .modal-3d { height: 100%; } }
+@media (max-width: 600px) { .modal-3d { height: 100%; grid-template-rows: auto minmax(280px, 1fr) auto auto auto; } }
+.modal-3d-nota a { color: #8ab4ff; }
+.c3d-etiqueta-via { display: inline-block; transform: translateY(-34px); box-shadow: 0 4px 14px rgb(215 0 21 / 0.35); }

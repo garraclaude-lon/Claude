@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { RegionAnatomica } from '../algoritmo/tipos';
-import type { ControlEscena } from '../corazon3d/escena';
+import type { ControlEscena, Vista } from '../corazon3d/escena';
 
 interface Props {
   regiones: RegionAnatomica[];
@@ -33,7 +33,7 @@ export function Visor3D({ regiones, onCerrar }: Props) {
   const [estado, setEstado] = useState<'cargando' | 'listo' | 'sin_webgl' | 'error'>(() => (hayWebGL() ? 'cargando' : 'sin_webgl'));
   const [pausado, setPausado] = useState(reducirMovimiento);
   const [lento, setLento] = useState(false);
-  const [vista, setVista] = useState<'frontal' | 'anillos'>('frontal');
+  const [vista, setVista] = useState<Vista>('via');
 
   useEffect(() => {
     cerrar.current?.focus();
@@ -51,13 +51,12 @@ export function Visor3D({ regiones, onCerrar }: Props) {
     if (estado !== 'cargando' || !lienzo.current) return;
     let vivo = true;
     import('../corazon3d/escena')
-      .then(({ crearEscena }) => {
-        if (!vivo || !lienzo.current) return;
-        control.current = crearEscena(lienzo.current, {
-          regiones: regiones.map((r) => r.codigo),
-          pausado,
-          oscuro: temaOscuro(),
-        });
+      .then(({ crearEscena }) =>
+        crearEscena(lienzo.current!, { regiones: regiones.map((r) => r.codigo), pausado, oscuro: temaOscuro() }),
+      )
+      .then((c) => {
+        if (!vivo) return c.destruir();
+        control.current = c;
         setEstado('listo');
       })
       .catch(() => vivo && setEstado('error'));
@@ -94,8 +93,8 @@ export function Visor3D({ regiones, onCerrar }: Props) {
           </button>
         </header>
 
-        <div className="modal-3d-lienzo" ref={lienzo} role="img" aria-label={`Corazón 3D esquemático con el sistema de conducción y un LED rojo en la región ${nombres}.`}>
-          {estado === 'cargando' && <p className="modal-3d-msj">Cargando modelo 3D…</p>}
+        <div className="modal-3d-lienzo" ref={lienzo} role="img" aria-label={`Corazón 3D anatómico con el sistema de conducción y un LED rojo en la región ${nombres}.`}>
+          {estado === 'cargando' && <p className="modal-3d-msj">Cargando modelo anatómico…</p>}
           {estado === 'sin_webgl' && (
             <p className="modal-3d-msj" data-testid="sin-webgl">
               Este dispositivo o navegador no puede mostrar gráficos 3D (WebGL). Usá el esquema de los anillos AV del resultado.
@@ -106,6 +105,7 @@ export function Visor3D({ regiones, onCerrar }: Props) {
 
         <div className="modal-3d-controles">
           <div className="segmentado" role="group" aria-label="Vista">
+            <button type="button" aria-pressed={vista === 'via'} onClick={() => setVista('via')}>Vía accesoria</button>
             <button type="button" aria-pressed={vista === 'frontal'} onClick={() => setVista('frontal')}>Frontal</button>
             <button type="button" aria-pressed={vista === 'anillos'} onClick={() => setVista('anillos')}>Anillos AV</button>
           </div>
@@ -124,9 +124,14 @@ export function Visor3D({ regiones, onCerrar }: Props) {
           <li><i className="ley-cruce" aria-hidden="true" /> Preexcitación: el impulso cruza por la vía antes que por el His</li>
         </ul>
         <p className="modal-3d-nota">
-          Modelo esquemático con fines didácticos: no es una reconstrucción anatómica ni del paciente. La
-          ubicación es la predicción del algoritmo, no una localización confirmada. Arrastrá para girar y
-          usá la rueda o el gesto de pellizcar para acercar.
+          Modelo anatómico de un adulto de referencia, no del paciente; el sistema de conducción está
+          trazado de forma aproximada. La ubicación es la predicción del algoritmo, no una localización
+          confirmada. Girá el corazón arrastrando con el mouse o deslizando un dedo; acercá con la rueda o
+          pellizcando con dos dedos.
+          <br />
+          Modelo: <a href="https://github.com/Z-Anatomy/Models-of-human-anatomy" target="_blank" rel="noreferrer">Z-Anatomy</a> (
+          <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>), basado en
+          BodyParts3D © The Database Center for Life Science (CC BY 4.0). Corazón extraído y simplificado.
         </p>
       </div>
     </div>,
