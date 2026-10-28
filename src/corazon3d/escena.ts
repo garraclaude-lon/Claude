@@ -12,7 +12,6 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -21,7 +20,9 @@ import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRe
 import { REGIONES } from '../algoritmo/catalogo';
 import type { CodigoRegion } from '../algoritmo/tipos';
 import { SEGMENTOS } from '../componentes/DiagramaAnillos';
-import modeloUrl from './modelo/corazon.glb?url';
+// El modelo va embebido como texto base64 y se decodifica acá mismo: el visor de claude.ai
+// no permite cargar datos con fetch (tampoco desde una URL data:).
+import modeloBase64 from './modelo/corazon.glb?inline';
 import referencias from './modelo/referencias.json';
 
 export interface OpcionesEscena {
@@ -71,6 +72,15 @@ export function ubicacionRegion(c: CodigoRegion): THREE.Vector3 {
   // PSTA/CSOs: entre el anillo posteroseptal y el ostium del seno coronario
   if (c === 'PSTA_CSOS') return p.lerp(v3(referencias.sitios.ostium), 0.5);
   return p;
+}
+
+/** Convierte la URL data: (base64) del modelo en bytes, sin usar fetch. */
+export function decodificarModelo(dataUrl: string): ArrayBuffer {
+  const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
 }
 
 // --- Tiempos del ciclo (fracciones de 0 a 1) ------------------------------------
@@ -223,8 +233,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
   escena.add(corazon);
 
   // --- Modelo anatómico
-  const cargador = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-  const gltf = await cargador.loadAsync(modeloUrl);
+  const gltf = await new GLTFLoader().parseAsync(decodificarModelo(modeloBase64), '');
   const ventriculos = new THREE.Group();
   const auriculas = new THREE.Group();
   const fijos = new THREE.Group();

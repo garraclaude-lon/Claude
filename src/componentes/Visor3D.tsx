@@ -59,7 +59,10 @@ export function Visor3D({ regiones, onCerrar }: Props) {
         control.current = c;
         setEstado('listo');
       })
-      .catch(() => vivo && setEstado('error'));
+      .catch((e) => {
+        console.error('3D location:', e);
+        if (vivo) setEstado('error');
+      });
     return () => {
       vivo = false;
       control.current?.destruir();

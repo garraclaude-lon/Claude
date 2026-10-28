@@ -10,8 +10,8 @@
 // Ver docs/LICENCIA-MODELO-3D.md.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { Document, NodeIO } from '@gltf-transform/core';
-import { ALL_EXTENSIONS, EXTMeshoptCompression } from '@gltf-transform/extensions';
-import { meshopt, quantize, weld } from '@gltf-transform/functions';
+import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
+import { quantize, weld } from '@gltf-transform/functions';
 import { MeshoptDecoder, MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer';
 
 const dir = process.argv[2];
@@ -398,8 +398,9 @@ for (const [nombre, m] of Object.entries(mallas)) {
 doc.getRoot().setDefaultScene(escena);
 doc.getRoot().getAsset().copyright =
   'Z-Anatomy (CC BY-SA 4.0), basado en BodyParts3D © The Database Center for Life Science (CC BY 4.0). Corazón extraído y simplificado para WPW Navigator 3D.';
-await doc.transform(weld(), quantize({ quantizePosition: 14 }), meshopt({ encoder: MeshoptEncoder, level: 'high' }));
-doc.createExtension(EXTMeshoptCompression).setRequired(true);
+// Solo cuantización estándar (KHR_mesh_quantization): three.js la lee sin WebAssembly,
+// que el visor de claude.ai puede bloquear.
+await doc.transform(weld(), quantize({ quantizePosition: 14 }));
 
 mkdirSync(salida, { recursive: true });
 await io.write(`${salida}/corazon.glb`, doc);

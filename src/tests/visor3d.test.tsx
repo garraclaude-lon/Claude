@@ -95,3 +95,17 @@ describe('Modelo anatómico extraído', () => {
     expect(referencias.anillos.mitral.centro[0]).toBeGreaterThan(referencias.anillos.tricuspide.centro[0]);
   });
 });
+
+describe('Modelo embebido', () => {
+  it('se decodifica sin fetch y es un GLB sin compresión que requiera WebAssembly', async () => {
+    const { decodificarModelo } = await import('../corazon3d/escena');
+    const { readFileSync } = await import('node:fs');
+    const bytes = readFileSync('src/corazon3d/modelo/corazon.glb');
+    const buf = decodificarModelo('data:model/gltf-binary;base64,' + bytes.toString('base64'));
+    const v = new DataView(buf);
+    expect(String.fromCharCode(v.getUint8(0), v.getUint8(1), v.getUint8(2), v.getUint8(3))).toBe('glTF');
+    expect(buf.byteLength).toBe(bytes.length);
+    const json = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 20, v.getUint32(12, true))));
+    expect(json.extensionsUsed ?? []).not.toContain('EXT_meshopt_compression');
+  });
+});
