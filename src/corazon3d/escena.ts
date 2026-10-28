@@ -38,7 +38,7 @@ export interface ControlEscena {
   pausar(p: boolean): void;
   velocidad(factor: number): void;
   vista(v: Vista): void;
-  /** Muestra u oculta las etiquetas de referencias anatómicas (la de la vía siempre queda). */
+  /** Muestra u oculta las referencias anatómicas: etiquetas, válvulas AV, papilares y cuerdas (la etiqueta de la vía siempre queda). */
   etiquetas(visibles: boolean): void;
   /** Muestra u oculta los vasos coronarios (arterias y venas cardíacas). */
   coronarias(visibles: boolean): void;
@@ -313,6 +313,10 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
   const nodoAV = nodo(referencias.nodos.auriculoventricular as Vec, 0.28, auriculas);
 
   // --- Válvulas AV minimalistas, papilares y cuerdas tendinosas (esquemáticos)
+  // Aparato valvular (válvulas, papilares, cuerdas y anillos): oculto hasta prender las referencias.
+  const aparatoValvular = new THREE.Group();
+  aparatoValvular.visible = false;
+  ventriculos.add(aparatoValvular);
   // Estilo minimalista: velo casi transparente y solo el borde libre marcado (sin brillo).
   const matValva = registrar(new THREE.MeshStandardMaterial({
     color: 0xd9bfb2, roughness: 0.85, metalness: 0, envMapIntensity: 0.2,
@@ -376,7 +380,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
       geoBorde.setAttribute('position', new THREE.BufferAttribute(posBorde, 3));
       const lineaBorde = new THREE.Line(geoBorde, matBorde);
       lineaBorde.renderOrder = 4;
-      ventriculos.add(malla, lineaBorde);
+      aparatoValvular.add(malla, lineaBorde);
       // Precalcula los puntos del anillo y del borde de cierre
       const C = v3(d.anillo.centro), N = v3(d.anillo.normal);
       const anillo = Array.from({ length: U + 1 }, (_, i) => C.clone().addScaledVector(dir(d.anillo, d.a0 + (i / U) * (d.a1 - d.a0), new THREE.Vector3()), d.anillo.radio));
@@ -415,7 +419,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
       cono.position.copy(base).add(punta).multiplyScalar(0.5);
       cono.quaternion.setFromUnitVectors(Y, eje.normalize());
       cono.renderOrder = 2;
-      ventriculos.add(cono);
+      aparatoValvular.add(cono);
       // Cada papilar sostiene los bordes libres más cercanos de su válvula
       const propias = valvas.filter((v) => v.anillo === (izquierdo ? ANILLOS.mitral : ANILLOS.tricuspide));
       const candidatos = propias.flatMap((valva) => [3, 6, 9, 12, 15].map((i) => ({ valva, i, d: valva.libre(i).distanceTo(punta) })));
@@ -427,7 +431,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     const lineas = new THREE.LineSegments(geo, matCuerda);
     lineas.renderOrder = 3;
-    ventriculos.add(lineas);
+    aparatoValvular.add(lineas);
     return () => {
       lista.forEach((c, k) => {
         const q = c.valva.libre(c.i);
@@ -445,7 +449,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
     });
     const tubo = new THREE.Mesh(registrar(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(puntosAnillo, true), 96, 0.04, 8, true)), matAnillo);
     tubo.renderOrder = 3;
-    ventriculos.add(tubo);
+    aparatoValvular.add(tubo);
   }
   cuerdas();
 
@@ -579,12 +583,14 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
   };
   let etiquetasVisibles = false; // apagadas por defecto
   function aplicarEtiquetas() {
+    aparatoValvular.visible = etiquetasVisibles;
     const angosto = ancho() < 520;
     for (const e of etConduccion) e.style.visibility = etiquetasVisibles && vistaActual === 'frontal' && !angosto ? 'visible' : 'hidden';
     for (const e of etAnatomia) e.style.visibility = etiquetasVisibles && !angosto ? 'visible' : 'hidden';
   }
-  corazon.quaternion.copy(QUAT_VIA);
-  vista('via');
+  // Siempre abre en la vista frontal
+  corazon.quaternion.copy(QUAT_FRONTAL);
+  vista('frontal');
 
   // --- Llamada de la vía: etiqueta afuera de la silueta y línea hasta casi el LED
   const tmp = new THREE.Vector3();
@@ -737,8 +743,10 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
 
     // Válvulas AV: cerradas durante la sístole ventricular, abiertas en la diástole
     const abierto = (1 - suave(ventana(t, 0.2, 0.26))) + suave(ventana(t, 0.55, 0.63));
-    for (const v of valvas) v.actualizar(Math.min(1, abierto));
-    cuerdas();
+    if (aparatoValvular.visible) {
+      for (const v of valvas) v.actualizar(Math.min(1, abierto));
+      cuerdas();
+    }
 
     // Latido: sístole auricular y ventricular, cada una hacia su propio centro
     const sistA = Math.sin(Math.PI * ventana(t, 0.08, 0.24)) * 0.04;

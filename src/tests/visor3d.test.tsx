@@ -30,6 +30,8 @@ describe('Botón 3D location', () => {
     const u = userEvent.setup();
     render(<PanelResultado resultado={aplicarArruda(e({ deltaI: 'negativa', deltaAVF: 'positiva' }))} desactualizado={false} onReiniciar={() => {}} />);
     await u.click(screen.getByRole('button', { name: '3D location' }));
+    // Siempre abre en la vista frontal
+    expect(screen.getByRole('button', { name: 'Frontal' })).toHaveAttribute('aria-pressed', 'true');
     for (const nombre of ['Referencias anatómicas', 'Vasos coronarios']) {
       const boton = screen.getByRole('button', { name: nombre });
       expect(boton).toHaveAttribute('aria-pressed', 'false');

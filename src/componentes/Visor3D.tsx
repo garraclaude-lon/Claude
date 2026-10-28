@@ -33,7 +33,7 @@ export function Visor3D({ regiones, onCerrar }: Props) {
   const [estado, setEstado] = useState<'cargando' | 'listo' | 'sin_webgl' | 'error'>(() => (hayWebGL() ? 'cargando' : 'sin_webgl'));
   const [pausado, setPausado] = useState(reducirMovimiento);
   const [lento, setLento] = useState(false);
-  const [vista, setVista] = useState<Vista>('via');
+  const [vista, setVista] = useState<Vista>('frontal');
   const [etiquetas, setEtiquetas] = useState(false);
   const [coronarias, setCoronarias] = useState(false);
 
