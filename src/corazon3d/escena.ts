@@ -267,7 +267,10 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
     m.material = registrar(material(grupo));
     m.renderOrder = grupo === 'ventriculo' || grupo === 'auricula' ? 2 : 1;
     // Vasos coronarios: arterias y venas cardíacas (incluye el seno coronario)
-    if (grupo === 'arteria' || grupo === 'vena_cardiaca') coronarias.push(m);
+    if (grupo === 'arteria' || grupo === 'vena_cardiaca') {
+      coronarias.push(m);
+      m.visible = false; // apagados por defecto
+    }
     registrar(m.geometry);
     (DESTINO[grupo] ?? fijos).add(m);
   }
@@ -431,7 +434,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
     controles.update();
     aplicarEtiquetas();
   };
-  let etiquetasVisibles = true;
+  let etiquetasVisibles = false; // apagadas por defecto
   function aplicarEtiquetas() {
     const angosto = ancho() < 520;
     for (const e of etConduccion) e.style.visibility = etiquetasVisibles && vistaActual === 'frontal' && !angosto ? 'visible' : 'hidden';

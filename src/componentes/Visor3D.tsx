@@ -34,8 +34,8 @@ export function Visor3D({ regiones, onCerrar }: Props) {
   const [pausado, setPausado] = useState(reducirMovimiento);
   const [lento, setLento] = useState(false);
   const [vista, setVista] = useState<Vista>('via');
-  const [etiquetas, setEtiquetas] = useState(true);
-  const [coronarias, setCoronarias] = useState(true);
+  const [etiquetas, setEtiquetas] = useState(false);
+  const [coronarias, setCoronarias] = useState(false);
 
   useEffect(() => {
     cerrar.current?.focus();
