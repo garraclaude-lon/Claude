@@ -27,11 +27,12 @@ async function abrirFormulario(u: Usuario) {
 const sinIA = async () => null;
 
 describe('Pantalla de inicio', () => {
-  it('muestra encabezado, aviso y las dos versiones', () => {
+  it('muestra encabezado, pie y las dos versiones', () => {
     render(<App obtenerLector={sinIA} />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('WPW Navigator 3D by Longa');
     expect(screen.getByText('Localización de vías accesorias — Algoritmo de Arruda')).toBeInTheDocument();
-    expect(screen.getByText(/Prototipo de investigación/)).toBeInTheDocument();
+    expect(screen.queryByText(/Prototipo de investigación\./)).not.toBeInTheDocument();
+    expect(screen.getByText(/Prototipo sin uso asistencial/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Desde la imagen del ECG/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Cuestionario guiado/ })).toBeInTheDocument();
   });

@@ -134,7 +134,7 @@ main { display: grid; gap: 20px; }
 
 .encabezado {
   display: flex; align-items: center; gap: 14px;
-  padding-block: 22px 18px; margin-bottom: 4px;
+  padding-block: 22px 18px; margin-bottom: 18px;
 }
 .marca {
   flex: none; display: grid; place-items: center; width: 48px; height: 48px; padding: 0;
@@ -150,12 +150,6 @@ main { display: grid; gap: 20px; }
 .encabezado .by { font-weight: 400; color: var(--texto-tenue); font-size: 0.95rem; letter-spacing: 0; }
 .subtitulo { margin: 2px 0 0; color: var(--texto-suave); font-size: 0.92rem; }
 
-.aviso-investigacion {
-  display: flex; gap: 10px; align-items: flex-start;
-  margin: 14px 0 22px; padding: 0; font-size: 0.82rem; line-height: 1.5; color: var(--texto-suave);
-}
-.aviso-investigacion strong { color: var(--alerta); }
-.aviso-icono { flex: none; margin-top: 1px; color: var(--alerta); }
 
 .pie {
   margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--borde);

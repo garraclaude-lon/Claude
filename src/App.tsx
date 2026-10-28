@@ -9,7 +9,7 @@ import { EncabezadoPaciente, FormularioPaciente } from './componentes/Formulario
 import { GuardarRegistro, nuevaSesion } from './componentes/GuardarRegistro';
 import { ResumenRegistro } from './componentes/ResumenRegistro';
 import { Asistente } from './componentes/Asistente';
-import { IconoAviso, Marca } from './componentes/Iconos';
+import { Marca } from './componentes/Iconos';
 import { FormularioECG } from './componentes/FormularioECG';
 import { ModoImagen } from './componentes/ModoImagen';
 import { PanelResultado } from './componentes/PanelResultado';
@@ -58,16 +58,6 @@ export function App({ obtenerLector, preparar, obtenerRepositorio = obtenerRepos
         </div>
       </header>
 
-      <p className="aviso-investigacion" role="note">
-        <IconoAviso className="aviso-icono" />
-        <span>
-          <strong>Prototipo de investigación.</strong> No reemplaza la evaluación clínica ni el estudio
-          electrofisiológico; las reglas deben revisarse contra la publicación original antes de
-          cualquier uso asistencial. No ingreses datos identificables. Solo se guardan datos anónimos
-          (sexo, edad, criterios y resultado) al pulsar “Guardar en el registro”; la imagen nunca se
-          guarda.
-        </span>
-      </p>
 
       <main>
         {modo === 'inicio' && (
