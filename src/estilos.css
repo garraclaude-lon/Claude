@@ -667,6 +667,12 @@ main { display: grid; gap: 20px; }
   }
   :root:not([data-theme="light"]) .boton-volumen:active { box-shadow: 0 1px 0 #111114, 0 3px 8px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.12); }
 }
+.boton-volumen:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+/* Botón principal de la pantalla: mismo estilo, más grande */
+.boton-volumen.boton-principal { min-height: 58px; padding: 14px 30px 14px 24px; gap: 12px; font-size: 1.08rem; }
+.acciones-principales { display: grid; justify-items: start; gap: 12px; margin-top: 18px; }
+.acciones-principales .leyendo { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+@media (max-width: 520px) { .boton-volumen.boton-principal { width: 100%; justify-content: center; padding: 14px 16px; gap: 10px; font-size: 1rem; white-space: nowrap; } }
 .modal-alerta-chica { max-width: 380px; }
 .modal-alerta-chica h2 { font-size: 1.05rem; line-height: 1.35; }
 

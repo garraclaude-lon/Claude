@@ -223,19 +223,6 @@ export function ModoImagen({
     }
   };
 
-  const cambiarImagen = () => {
-    control.current?.abort();
-    setPrivacidad('sin_revisar');
-    setDeteccion(null);
-    setAnonimizacion(null);
-    setTapando(false);
-    setImagen(null);
-    setPropuesta(null);
-    setBloqueado(false);
-    setError(null);
-    setFase('cargar');
-  };
-
   const imagenYPrivacidad = imagen && (
     <>
       {tapando ? (
@@ -369,58 +356,59 @@ export function ModoImagen({
           <EncabezadoPaciente datos={paciente} onCambiar={setPaciente} />
           {imagenYPrivacidad}
 
-          <div className="bloque-ia">
-            <h3>Lectura automática (experimental)</h3>
-            {estadoLector === 'comprobando' && <p role="status">Comprobando si la lectura automática está disponible…</p>}
-            {estadoLector === 'no_disponible' && (
-              <p className="nota" data-testid="ia-no-disponible">
-                La lectura automática solo funciona en la versión publicada en claude.ai, con tu
-                autorización. Podés seguir con la revisión guiada.
-              </p>
-            )}
-            {estadoLector === 'disponible' && (
+          <div className="acciones-principales">
+            {fase === 'leyendo' ? (
+              <div className="leyendo" role="status">
+                <span>Analizando la imagen… puede tardar hasta un minuto.</span>
+                <button type="button" className="boton-volumen" onClick={() => control.current?.abort()}>
+                  Cancelar
+                </button>
+              </div>
+            ) : estadoLector === 'no_disponible' ? (
+              // Sin IA (fuera de claude.ai) se sigue con la revisión guiada.
+              <button
+                type="button"
+                className="boton-volumen boton-principal"
+                data-testid="ia-no-disponible"
+                onClick={() => verificarYSeguir(() => setFase('revision'))}
+                disabled={deteccion !== null || tapando || verificando}
+              >
+                <IconoGuiado />
+                Continuar sin IA
+              </button>
+            ) : (
               <>
-                <p className="nota">
-                  Claude propone qué ve en cada derivación. Es una ayuda sin validar: después vas a
-                  revisar y confirmar cada dato. La imagen se envía a Claude con tu cuenta y consume tu uso.
-                </p>
-                {revisionPendiente && (
-                  <p className="nota" role="status">La lectura se habilita cuando termine la revisión de datos personales.</p>
-                )}
-                {fase === 'leyendo' ? (
-                  <div className="leyendo" role="status">
-                    <span>Analizando la imagen… puede tardar hasta un minuto.</span>
-                    <button type="button" className="boton-secundario" onClick={() => control.current?.abort()}>
-                      Cancelar
-                    </button>
-                  </div>
-                ) : (
-                  <button type="button" className="boton-primario" disabled={revisionPendiente || tapando || verificando} onClick={() => verificarYSeguir(pedirIA)}>
-                    {verificando ? 'Revisando la imagen…' : 'Pedir propuesta a la IA'}
+                <button
+                  type="button"
+                  className="boton-volumen boton-principal"
+                  disabled={estadoLector === 'comprobando' || revisionPendiente || tapando || verificando}
+                  onClick={() => verificarYSeguir(pedirIA)}
+                >
+                  <IconoAnalizar />
+                  {estadoLector === 'comprobando' ? 'Preparando…' : revisionPendiente || verificando ? 'Revisando la imagen…' : 'Analizar y localizar vía con IA'}
+                </button>
+                {/* Si la IA falla, queda la opción de seguir con la revisión guiada. */}
+                {error && (
+                  <button
+                    type="button"
+                    className="boton-volumen"
+                    onClick={() => verificarYSeguir(() => setFase('revision'))}
+                    disabled={deteccion !== null || tapando || verificando}
+                  >
+                    Continuar sin IA
                   </button>
                 )}
               </>
             )}
           </div>
-
-          <div className="acciones">
-            <button
-              type="button"
-              className={estadoLector === 'disponible' ? 'boton-secundario' : 'boton-primario'}
-              onClick={() => verificarYSeguir(() => setFase('revision'))}
-              disabled={fase === 'leyendo' || deteccion !== null || tapando || verificando}
-            >
-              Revisar sin IA
-            </button>
-            <button type="button" className="boton-secundario" onClick={cambiarImagen} disabled={fase === 'leyendo'}>
-              Cambiar imagen
-            </button>
-          </div>
         </div>
       )}
 
       <div className="acciones">
-        <button type="button" className="boton-texto" onClick={onSalir}>
+        <button type="button" className="boton-volumen" onClick={onSalir}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
           Volver al inicio
         </button>
       </div>
@@ -489,5 +477,23 @@ function BloqueoDatosPersonales({ onTapar, onCerrar }: { onTapar: () => void; on
         </div>
       </div>
     </div>
+  );
+}
+
+function IconoAnalizar() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M2 12h4l2-5 3 10 2-6 1.5 3H18" />
+      <circle cx="19" cy="15" r="2.5" />
+      <path d="M21 17l1.5 1.5" />
+    </svg>
+  );
+}
+
+function IconoGuiado() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" />
+    </svg>
   );
 }

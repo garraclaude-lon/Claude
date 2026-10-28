@@ -27,8 +27,10 @@ describe('Modo imagen', () => {
     expect(screen.getByRole('heading', { name: 'Datos del paciente' })).toBeInTheDocument();
     await llenarPaciente(u);
     expect(screen.getByTestId('chip-paciente')).toHaveTextContent('Masculino · 4 meses · Lactante');
-    expect(await screen.findByTestId('ia-no-disponible')).toBeInTheDocument();
-    await u.click(screen.getByRole('button', { name: 'Revisar sin IA' }));
+    // Sin IA, el botón principal sigue con la revisión guiada.
+    await u.click(await screen.findByTestId('ia-no-disponible'));
+    expect(screen.queryByRole('button', { name: 'Revisar sin IA' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cambiar imagen' })).not.toBeInTheDocument();
     expect(screen.getByTestId('pregunta')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: /ecg.png/ })).toBeInTheDocument();
   });
@@ -48,7 +50,8 @@ describe('Modo imagen', () => {
     await u.upload(screen.getByTestId('input-archivo'), archivo);
     await llenarPaciente(u);
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
-    await u.click(await screen.findByRole('button', { name: 'Pedir propuesta a la IA' }));
+    expect(screen.queryByText(/Lectura automática/)).not.toBeInTheDocument();
+    await u.click(await screen.findByRole('button', { name: 'Analizar y localizar vía con IA' }));
     await waitFor(() => expect(leer).toHaveBeenCalledTimes(1));
     expect(await screen.findByTestId('pregunta')).toHaveTextContent('La IA sugiere: negativa');
     expect(screen.getByText(/Trazado algo borroso/)).toBeInTheDocument();
@@ -60,9 +63,10 @@ describe('Modo imagen', () => {
     render(<ModoImagen onSalir={() => {}} obtenerLector={async () => lector} preparar={preparar} />);
     await u.upload(screen.getByTestId('input-archivo'), archivo);
     await llenarPaciente(u);
-    await u.click(await screen.findByRole('button', { name: 'Pedir propuesta a la IA' }));
+    await u.click(await screen.findByRole('button', { name: 'Analizar y localizar vía con IA' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('límite de uso');
-    expect(screen.getByRole('button', { name: 'Revisar sin IA' })).toBeEnabled();
+    // Si la IA falla, queda la opción de seguir sin IA.
+    expect(screen.getByRole('button', { name: 'Continuar sin IA' })).toBeEnabled();
   });
 
   it('informa un archivo que no se puede abrir', async () => {
