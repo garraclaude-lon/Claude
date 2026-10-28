@@ -24,9 +24,9 @@ const base = {
  */
 export function Marca({ className }: P) {
   return (
-    <svg className={className} viewBox="0 -5 48 33" width="48" height="33" fill="none" aria-hidden="true">
+    <svg className={className} viewBox="0 -11 48 39" width="48" height="39" fill="none" aria-hidden="true">
       <path
-        d="M1 18H4.2C5.8 18 6.4 10.8 8.4 10.8S11 18 12.4 18C14.4 17.7 16.3 15.6 18 11.2L20.4 -3.2L23.6 21.4L25 18.4C26.1 18.6 27 19.2 28 20C29.8 21.6 31 24.8 33.4 24.8C35.6 24.8 36.6 20.6 38.8 18.4C39.4 18.1 40 18 40.7 18H47"
+        d="M1 18H4.2C5.8 18 6.4 10.8 8.4 10.8S11 18 12.4 18C14.4 17.7 16.3 15.6 18 11.2L20.6 -9.2L23.8 21.4L25 18.4C26.1 18.6 27 19.2 28 20C29.8 21.6 31 24.8 33.4 24.8C35.6 24.8 36.6 20.6 38.8 18.4C39.4 18.1 40 18 40.7 18H47"
         stroke="currentColor"
         strokeWidth="2.1"
         strokeLinecap="round"
