@@ -40,10 +40,15 @@
 2. **Anonimato.** Sexo y edad solos no identifican, pero combinados con fechas y una patología
    poco frecuente podrían hacerlo en una población chica. Por eso no se guarda la fecha del ECG
    ni texto libre.
-3. **Sin verificación de referencia.** El registro guarda la región **predicha**. Para validar el
-   algoritmo en pediatría haría falta agregar la localización confirmada en el estudio
-   electrofisiológico (posible siguiente paso).
-4. **Duplicados.** Un mismo paciente analizado dos veces queda como dos registros (ver
+3. **Correspondencia EEF–Arruda.** La tabla que decide si la predicción "coincide" con el sitio
+   confirmado (docs/REGISTRO.md) es una propuesta de esta herramienta. La debe revisar el equipo
+   de electrofisiología antes de usar el porcentaje de coincidencia en un trabajo científico.
+   Puntos dudosos: si un sitio posteroseptal mitral (PSMA) debería coincidir también con LP/LPL,
+   y cómo contar los casos "parciales" (PSTA o PSMA).
+4. **Código del registro.** Anotarlo en la historia clínica vincula el registro con el paciente
+   dentro del hospital (seudonimización). Ese vínculo tiene que quedar bajo las mismas reglas de
+   confidencialidad que la historia clínica.
+5. **Duplicados.** Un mismo paciente analizado dos veces queda como dos registros (ver
    docs/REGISTRO.md).
 
 ## Dependencias de desarrollo

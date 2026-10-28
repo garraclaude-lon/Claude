@@ -8,16 +8,19 @@
 import { VERSION_ALGORITMO } from '../algoritmo/catalogo';
 import type { CampoECG, EntradaECG, ResultadoArruda } from '../algoritmo/tipos';
 import type { PropuestaIA } from '../ia/lectorIA';
+import { type Concordancia, type DatosEEF } from './eef';
 import { edadTotalMeses, grupoEtario, type DatosPaciente, type GrupoEtario, type Sexo } from './paciente';
 
-export const VERSION_APP = '0.3.0';
-export const ESQUEMA_REGISTRO = 1;
+export const VERSION_APP = '0.4.0';
+export const ESQUEMA_REGISTRO = 2;
 export const COLECCION = 'analisis';
 
 export type ModoAnalisis = 'imagen' | 'guiado' | 'formulario';
 
 export interface RegistroAnalisis {
   esquema: number;
+  /** Código corto (WPW-XXXXXX) para cargar después el resultado del EEF. */
+  codigo: string;
   versionApp: string;
   versionAlgoritmo: string;
   modo: ModoAnalisis;
@@ -41,9 +44,16 @@ export interface RegistroAnalisis {
     criteriosRevisados: number;
     coincidencias: number;
   };
+  /** Localización confirmada en el estudio electrofisiológico; null = pendiente. */
+  eef: DatosEEF | null;
 }
 
+/** Lo que se lee de la base: el registro más los datos que agrega el guardado. */
+export type RegistroGuardado = RegistroAnalisis & { creadoEn?: string; actualizadoEn?: string };
+
 export interface DatosParaRegistro {
+  codigo: string;
+  eef?: DatosEEF | null;
   modo: ModoAnalisis;
   paciente: DatosPaciente;
   criterios: EntradaECG;
@@ -57,6 +67,7 @@ export function construirRegistro(d: DatosParaRegistro): RegistroAnalisis {
   const revisados = d.revisados ?? [];
   return {
     esquema: ESQUEMA_REGISTRO,
+    codigo: d.codigo,
     versionApp: VERSION_APP,
     versionAlgoritmo: VERSION_ALGORITMO,
     modo: d.modo,
@@ -84,6 +95,7 @@ export function construirRegistro(d: DatosParaRegistro): RegistroAnalisis {
           ).length,
         }
       : null,
+    eef: d.eef ?? null,
   };
 }
 
@@ -95,11 +107,16 @@ export interface Resumen {
   porGrupo: Record<string, number>;
   porRegion: Record<string, number>;
   porEstado: Record<string, number>;
+  /** Análisis con localización confirmada por EEF. */
+  conEEF: number;
+  porConcordancia: Partial<Record<Concordancia, number>>;
+  /** Análisis guardados sin resultado de EEF, más recientes primero. */
+  pendientesEEF: RegistroGuardado[];
 }
 
 /** Cuenta registros. Ignora documentos con forma inesperada. */
 export function resumir(registros: unknown[]): Resumen {
-  const r: Resumen = { total: 0, porSexo: {}, porGrupo: {}, porRegion: {}, porEstado: {} };
+  const r: Resumen = { total: 0, porSexo: {}, porGrupo: {}, porRegion: {}, porEstado: {}, conEEF: 0, porConcordancia: {}, pendientesEEF: [] };
   const sumar = (o: Record<string, number>, k: string) => (o[k] = (o[k] ?? 0) + 1);
   for (const x of registros) {
     const reg = x as Partial<RegistroAnalisis>;
@@ -111,15 +128,38 @@ export function resumir(registros: unknown[]): Resumen {
     const regiones = Array.isArray(reg.resultado.regiones) ? reg.resultado.regiones : [];
     // Con dos regiones posibles (PSTA o PSMA) se cuenta la combinación.
     if (regiones.length > 0) sumar(r.porRegion, regiones.join(' o '));
+    if (reg.eef && typeof reg.eef === 'object' && reg.eef.concordancia) {
+      r.conEEF++;
+      sumar(r.porConcordancia, String(reg.eef.concordancia));
+    } else if (typeof reg.codigo === 'string') {
+      r.pendientesEEF.push(reg as RegistroGuardado);
+    }
   }
+  r.pendientesEEF.sort((a, b) => String(b.creadoEn ?? '').localeCompare(String(a.creadoEn ?? '')));
   return r;
+}
+
+/**
+ * Porcentaje de coincidencia entre la predicción y el EEF, sobre los casos
+ * en que hubo predicción y sitio confirmado comparable. "Parcial" (dos
+ * opciones) se informa aparte y no se cuenta como acierto.
+ */
+export function tasaConcordancia(r: Resumen): { aciertos: number; parciales: number; comparables: number } {
+  const c = r.porConcordancia;
+  const aciertos = c.concordante ?? 0;
+  const parciales = c.parcial ?? 0;
+  return { aciertos, parciales, comparables: aciertos + parciales + (c.discordante ?? 0) };
 }
 
 // --- Conexión con la base de datos de claude.ai ----------------------------
 
 export interface Repositorio {
-  /** Guarda o actualiza un análisis. Devuelve su id. */
-  guardar(id: string | null, registro: RegistroAnalisis): Promise<string>;
+  /** Guarda o actualiza un análisis; su id es el código del registro. */
+  guardar(registro: RegistroAnalisis): Promise<void>;
+  /** Lee un análisis por su código, o null si no existe. */
+  obtener(codigo: string): Promise<RegistroGuardado | null>;
+  /** Carga (o borra, con null) el resultado del EEF de un análisis existente. */
+  actualizarEEF(codigo: string, eef: DatosEEF | null): Promise<void>;
   /** Avisa cada vez que cambian los registros. Devuelve la función para dejar de escuchar. */
   escuchar(alCambiar: (registros: unknown[]) => void): () => void;
 }
@@ -128,6 +168,7 @@ interface DocRef {
   id: string;
   get(): Promise<{ exists: boolean; data(): Record<string, unknown> | undefined }>;
   set(data: Record<string, unknown>): Promise<void>;
+  update(data: Record<string, unknown>): Promise<void>;
 }
 interface DbNs {
   collection(path: string): {
@@ -154,20 +195,22 @@ export async function obtenerRepositorioClaude(): Promise<Repositorio | null> {
   const coleccion = db.collection(COLECCION);
 
   return {
-    async guardar(id, registro) {
-      const ref = id ? coleccion.doc(id) : coleccion.doc();
+    async guardar(registro) {
+      const ref = coleccion.doc(registro.codigo);
       const ahora = new Date().toISOString();
-      let creadoEn = ahora;
-      let creadoPor: string | null = null;
-      if (id) {
-        const previo = await ref.get();
-        const datos = previo.exists ? previo.data() : undefined;
-        if (typeof datos?.creadoEn === 'string') creadoEn = datos.creadoEn;
-        if (typeof datos?.creadoPor === 'string') creadoPor = datos.creadoPor;
-      }
-      if (!creadoPor) creadoPor = (await user?.id().catch(() => null)) ?? null;
+      const previo = await ref.get();
+      const datos = previo.exists ? previo.data() : undefined;
+      const creadoEn = typeof datos?.creadoEn === 'string' ? datos.creadoEn : ahora;
+      const creadoPor =
+        typeof datos?.creadoPor === 'string' ? datos.creadoPor : ((await user?.id().catch(() => null)) ?? null);
       await ref.set({ ...registro, creadoEn, actualizadoEn: ahora, creadoPor });
-      return ref.id;
+    },
+    async obtener(codigo) {
+      const snap = await coleccion.doc(codigo).get();
+      return snap.exists ? ((snap.data() ?? null) as RegistroGuardado | null) : null;
+    },
+    async actualizarEEF(codigo, eef) {
+      await coleccion.doc(codigo).update({ eef, actualizadoEn: new Date().toISOString() });
     },
     escuchar(alCambiar) {
       return coleccion.onSnapshot(

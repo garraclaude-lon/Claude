@@ -1,4 +1,4 @@
-# Registro de análisis (esquema 1)
+# Registro de análisis (esquema 2)
 
 Cada análisis que se guarda con **"Guardar en el registro"** queda como un documento en la
 colección `analisis` de la base de datos privada de la página publicada en claude.ai.
@@ -8,7 +8,8 @@ colección `analisis` de la base de datos privada de la página publicada en cla
 
 | Campo | Ejemplo | Descripción |
 |---|---|---|
-| `esquema` | `1` | Versión de este formato. |
+| `esquema` | `2` | Versión de este formato. |
+| `codigo` | `"WPW-7F3KAB"` | Código del registro (también es el id del documento). |
 | `versionApp` | `"0.3.0"` | Versión de la app que guardó el registro. |
 | `versionAlgoritmo` | `"arruda-1998-impl-0.1.0"` | Versión de las reglas usadas. |
 | `modo` | `"imagen"` | `imagen`, `guiado` o `formulario`. |
@@ -20,8 +21,54 @@ colección `analisis` de la base de datos privada de la página publicada en cla
 | `resultado.estado` | `"region_predicha"` | `region_predicha`, `datos_insuficientes`, `indeterminado` o `no_clasificable`. |
 | `resultado.regiones` | `["PSTA_CSOS"]` | Códigos de región (dos si el algoritmo no discrimina: `["PSTA","PSMA"]`). |
 | `ia` | `null` o `{ valores, calidad, esECG, criteriosRevisados, coincidencias }` | Propuesta de la IA, si se usó. |
+| `eef` | `null` o `{ localizacion, fuente, concordancia }` | Resultado del estudio electrofisiológico. `null` = pendiente. |
+| `eef.localizacion` | `"LL"` | Sitio confirmado (ver tabla abajo). |
+| `eef.fuente` | `"ablacion_exitosa"` | `ablacion_exitosa`, `mapeo_sin_ablacion` o `null` (no informado). |
+| `eef.concordancia` | `"concordante"` | `concordante`, `parcial`, `discordante`, `sin_prediccion` o `no_evaluable`. |
 | `creadoEn` / `actualizadoEn` | ISO 8601 | Momento del análisis (no es la fecha del ECG). |
 | `creadoPor` | id opaco | Identifica qué cuenta guardó el registro (no al paciente). |
+
+## Código del registro
+
+Cada análisis guardado recibe un código `WPW-` + 6 caracteres. Solo usa letras y números que no
+se confunden al copiarlos a mano (no usa 0, O, 1, I ni L). La idea es **anotarlo en la historia
+clínica**: así el registro sigue siendo anónimo en claude.ai y la relación entre código y paciente
+queda solo dentro del hospital. Con ese código se carga después el resultado del EEF.
+
+## Estudio electrofisiológico: sitios y correspondencia con Arruda
+
+La concordancia se calcula comparando la región predicha con las regiones "compatibles" del
+sitio confirmado. **Esta tabla es una propuesta de la herramienta y la debe revisar el equipo
+de electrofisiología** (está en `src/registro/eef.ts`).
+
+| Código | Sitio confirmado | Regiones de Arruda que coinciden |
+|---|---|---|
+| `LAL` | Anterolateral izquierda | LL/LAL |
+| `LL` | Lateral izquierda | LL/LAL |
+| `LPL` | Posterolateral izquierda | LP/LPL |
+| `LP` | Posterior izquierda | LP/LPL |
+| `PSMA` | Posteroseptal mitral (izquierda) | PSMA |
+| `AS_PH` | Anteroseptal / parahisiana | AS/RAPS |
+| `MS` | Medioseptal | MSTA |
+| `PSTA` | Posteroseptal tricuspídea (derecha) | PSTA/CSOs, PSTA |
+| `CSOS` | Región del ostium del seno coronario (endocárdica) | PSTA/CSOs |
+| `PS_SUBEPI` | Posteroseptal subepicárdica (seno coronario, vena cardíaca media o divertículo) | PS subepicárdica |
+| `RA` / `RAL` | Anterior / anterolateral derecha | RA/RAL |
+| `RL` | Lateral derecha | RL |
+| `RPL` / `RP` | Posterolateral / posterior derecha | RP/RPL |
+| `MULTIPLES` | Vías accesorias múltiples | — (no evaluable) |
+| `NO_LOCALIZADA` | No localizada / estudio no concluyente | — (no evaluable) |
+
+Cuándo se considera coincidencia:
+- **concordante:** la región predicha está entre las compatibles.
+- **parcial:** el algoritmo dio dos opciones (PSTA o PSMA) y una coincide. En el porcentaje de
+  coincidencia **no** se cuenta como acierto.
+- **discordante:** hubo predicción y no coincide.
+- **sin_prediccion:** el algoritmo no dio región (indeterminado, incompleto o no clasificable).
+- **no_evaluable:** vías múltiples o sitio no localizado.
+
+El porcentaje de coincidencia que muestra la pantalla de inicio es
+`concordantes / (concordantes + parciales + discordantes)`.
 
 ## Grupos etarios
 

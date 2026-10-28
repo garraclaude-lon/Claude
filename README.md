@@ -8,7 +8,7 @@ criterios del ECG de superficie, aplicando de forma determinista el algoritmo de
 > revisarse contra la publicación original antes de cualquier uso asistencial
 > (ver [docs/LIMITACIONES.md](docs/LIMITACIONES.md)). No ingresar datos identificables de pacientes.
 
-## Qué hace esta versión (0.3.0)
+## Qué hace esta versión (0.4.0)
 
 Al abrir la app se elige una de dos versiones:
 
@@ -30,7 +30,12 @@ criterios usados, los datos faltantes, la referencia y la versión del algoritmo
 Al terminar, **"Guardar en el registro"** guarda un registro anónimo (sexo, edad, grupo etario,
 criterios confirmados, resultado y concordancia con la IA) en la base de datos privada de la
 página publicada en claude.ai. La pantalla de inicio muestra un resumen en vivo por sexo, grupo
-etario y región. **La imagen nunca se guarda.** Formato y cortes etarios: [docs/REGISTRO.md](docs/REGISTRO.md).
+etario y región. **La imagen nunca se guarda.**
+
+Cada análisis guardado recibe un **código** (`WPW-XXXXXX`) para anotar en la historia clínica.
+La **localización confirmada en el estudio electrofisiológico** se carga al guardar o más tarde,
+desde la pantalla de inicio (lista de pendientes o búsqueda por código). La app indica si la
+predicción de Arruda coincide con el sitio confirmado y muestra el porcentaje de coincidencia. Formato y cortes etarios: [docs/REGISTRO.md](docs/REGISTRO.md).
 En local (`npm run dev`) no hay base de datos y la app lo indica.
 
 El corazón 3D queda para versiones futuras.
@@ -66,6 +71,7 @@ src/
   registro/
     paciente.ts       # sexo, edad, grupo etario y validación
     registro.ts       # formato del registro, resumen y conexión con la base de datos
+    eef.ts            # sitios del EEF, concordancia con Arruda y códigos de registro
   imagen/preparar.ts  # abre JPG/PNG/BMP/PDF en el navegador
   componentes/        # interfaz React
     PantallaInicio.tsx      # elección de versión
@@ -75,6 +81,7 @@ src/
     FormularioECG.tsx       # formulario completo
     FormularioPaciente.tsx  # sexo y edad
     GuardarRegistro.tsx, ResumenRegistro.tsx
+    SelectorEEF.tsx, CargarEEF.tsx  # localización confirmada en el EEF
     PanelResultado.tsx
     ExplicacionAlgoritmo.tsx
     campos.ts               # definición de cada criterio

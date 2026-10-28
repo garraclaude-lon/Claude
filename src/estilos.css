@@ -397,3 +397,47 @@ main { display: grid; gap: 16px; }
 .resumen-tabla { min-width: 0; overflow-x: auto; }
 .resumen-tabla caption { text-align: left; font-weight: 700; padding-bottom: 4px; }
 .criterios td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---------- Estudio electrofisiológico ---------- */
+.selector-eef { display: grid; gap: 6px; }
+.selector-eef-etiqueta { font-weight: 600; }
+.selector-eef select {
+  font: inherit; min-height: 44px; padding: 6px 10px; max-width: 100%;
+  color: var(--texto); background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio);
+}
+.selector-eef select:focus-visible { outline: 2px solid var(--primario); outline-offset: 1px; }
+.selector-eef-fuente { padding-left: 0; }
+.concordancia-eef { margin: 0; padding: 6px 12px; border-radius: var(--radio); font-size: 0.93rem; background: var(--neutro-fondo); }
+.concordancia-concordante { background: var(--ok-fondo); color: var(--ok); }
+.concordancia-parcial { background: var(--alerta-fondo); }
+.concordancia-discordante { background: var(--error-fondo); color: var(--error); }
+
+.codigo-registro { border: 2px dashed var(--primario); border-radius: var(--radio); padding: 10px 14px; display: grid; gap: 2px; }
+.codigo-registro .nota { margin: 0; }
+.codigo-titulo { margin: 0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--texto-suave); font-weight: 700; }
+.codigo-valor { margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.codigo-valor span, .codigo-celda {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-weight: 700; letter-spacing: 0.04em;
+}
+.codigo-valor span { font-size: 1.5rem; color: var(--primario); user-select: all; }
+.codigo-celda { white-space: nowrap; }
+
+.resumen-sub { font-size: 0.93rem; color: var(--texto-suave); }
+.eef-pendientes { margin-top: 16px; border-top: 1px solid var(--borde); padding-top: 12px; display: grid; gap: 12px; }
+.eef-pendientes h3 { margin: 0; }
+.buscar-codigo { display: grid; gap: 4px; max-width: 420px; }
+.buscar-codigo label { font-weight: 600; font-size: 0.93rem; }
+.buscar-codigo-fila { display: flex; gap: 8px; }
+.buscar-codigo-fila input {
+  flex: 1; min-width: 0; font: inherit; min-height: 44px; padding: 6px 10px; text-transform: uppercase;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  color: var(--texto); background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio);
+}
+.buscar-codigo-fila input:focus-visible { outline: 2px solid var(--primario); outline-offset: 1px; }
+.tabla-desplazable { overflow-x: auto; min-width: 0; }
+.tabla-desplazable caption { text-align: left; font-weight: 700; padding-bottom: 4px; }
+.tabla-desplazable .boton-texto { min-height: 36px; padding: 4px; }
+.editor-eef { display: grid; gap: 10px; background: var(--fondo); border: 1px solid var(--borde); border-radius: var(--radio); padding: 12px 14px; }
+.editor-eef-cabecera { margin: 0; font-size: 0.93rem; }
+.editor-eef .acciones { margin-top: 0; }
+.solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

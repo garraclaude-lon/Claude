@@ -4,7 +4,7 @@ import type { CampoECG, EntradaECG, ResultadoArruda } from './algoritmo/tipos';
 import type { LectorIA } from './ia/lectorIA';
 import type { ImagenPreparada } from './imagen/preparar';
 import type { DatosPaciente } from './registro/paciente';
-import { construirRegistro, obtenerRepositorioClaude, type Repositorio } from './registro/registro';
+import { obtenerRepositorioClaude, type Repositorio } from './registro/registro';
 import { EncabezadoPaciente, FormularioPaciente } from './componentes/FormularioPaciente';
 import { GuardarRegistro, nuevaSesion } from './componentes/GuardarRegistro';
 import { ResumenRegistro } from './componentes/ResumenRegistro';
@@ -108,7 +108,7 @@ function FlujoGuiado({ repositorio, paciente, setPaciente, onSalir }: PropsModo)
       alTerminar={({ resultado, confirmadas }) => (
         <GuardarRegistro
           sesion={sesion}
-          registro={construirRegistro({ modo: 'guiado', paciente, criterios: confirmadas, resultado })}
+          datos={{ modo: 'guiado', paciente, criterios: confirmadas, resultado }}
           paciente={paciente}
           repositorio={repositorio}
           onOtroPaciente={onSalir}
@@ -157,7 +157,7 @@ function ModoFormulario({ repositorio, paciente, setPaciente, onSalir }: PropsMo
           {resultado && !desactualizado && (
             <GuardarRegistro
               sesion={sesion}
-              registro={construirRegistro({ modo: 'formulario', paciente, criterios: entrada, resultado })}
+              datos={{ modo: 'formulario', paciente, criterios: entrada, resultado }}
               paciente={paciente}
               repositorio={repositorio}
               onOtroPaciente={onSalir}

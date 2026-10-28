@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { mensajeErrorIA, obtenerLectorClaude, type LectorIA, type PropuestaIA } from '../ia/lectorIA';
 import { ACEPTA_ARCHIVOS, prepararArchivo, type ImagenPreparada } from '../imagen/preparar';
 import type { DatosPaciente } from '../registro/paciente';
-import { construirRegistro, type Repositorio } from '../registro/registro';
+import type { Repositorio } from '../registro/registro';
 import { Asistente } from './Asistente';
 import { EncabezadoPaciente, FormularioPaciente } from './FormularioPaciente';
 import { GuardarRegistro, nuevaSesion } from './GuardarRegistro';
@@ -97,7 +97,7 @@ export function ModoImagen({ onSalir, repositorio = null, obtenerLector = obtene
         alTerminar={({ resultado, confirmadas, revisados }) => (
           <GuardarRegistro
             sesion={sesion}
-            registro={construirRegistro({ modo: 'imagen', paciente, criterios: confirmadas, resultado, propuesta, revisados })}
+            datos={{ modo: 'imagen', paciente, criterios: confirmadas, resultado, propuesta, revisados }}
             paciente={paciente}
             repositorio={repositorio}
             onOtroPaciente={onSalir}
