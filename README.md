@@ -8,7 +8,7 @@ criterios del ECG de superficie, aplicando de forma determinista el algoritmo de
 > revisarse contra la publicación original antes de cualquier uso asistencial
 > (ver [docs/LIMITACIONES.md](docs/LIMITACIONES.md)). No ingresar datos identificables de pacientes.
 
-## Qué hace esta versión (0.5.0)
+## Qué hace esta versión (0.6.0)
 
 Al abrir la app se elige una de dos versiones:
 
@@ -39,6 +39,15 @@ predicción de Arruda coincide con el sitio confirmado y muestra el porcentaje d
 En local (`npm run dev`) no hay base de datos y la app lo indica.
 
 El corazón 3D queda para versiones futuras.
+
+### 3D location
+
+En el resultado, el botón **3D location** abre un corazón 3D **esquemático** semitransparente
+(cámaras, anillos AV, aorta y arteria pulmonar) que late, con el sistema de conducción (nódulo
+sinusal, vías internodales, nódulo AV, haz de His, ramas y Purkinje) conduciendo el impulso, y un
+**LED rojo** en la región predicha. El impulso también cruza por la vía accesoria antes que por el
+His (preexcitación). Vistas frontal y de anillos AV (igual que el esquema 2D), velocidad normal o
+lenta, pausa, y giro y zoom con el mouse o los dedos. Requiere WebGL.
 
 ### Protección de datos personales en la imagen
 
@@ -81,6 +90,7 @@ src/
     eef.ts            # sitios del EEF, concordancia con Arruda y códigos de registro
   imagen/preparar.ts  # abre JPG/PNG/BMP/PDF en el navegador
   imagen/anonimizar.ts  # ocultar o recortar zonas con datos personales
+  corazon3d/escena.ts   # corazón 3D esquemático (three.js)
   componentes/        # interfaz React
     PantallaInicio.tsx      # elección de versión
     ModoImagen.tsx          # cámara / archivo + propuesta de la IA
@@ -88,6 +98,7 @@ src/
     VisorECG.tsx            # imagen con zoom
     AlertaPrivacidad.tsx    # alerta roja de datos personales detectados
     TaparZonas.tsx          # tapar zonas a mano
+    Visor3D.tsx             # ventana "3D location"
     FormularioECG.tsx       # formulario completo
     FormularioPaciente.tsx  # sexo y edad
     DiagramaAnillos.tsx     # esquema de los anillos AV (región predicha y sitio del EEF)

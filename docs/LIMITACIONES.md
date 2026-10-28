@@ -18,6 +18,19 @@
 7. **Definición de isoeléctrica.** La herramienta no mide el ECG: depende de que el usuario
    evalúe correctamente los primeros 20 ms. No hay ayuda visual ni umbrales de amplitud.
 
+## Modelo 3D (3D location)
+
+1. **Es esquemático.** Las cámaras son formas simplificadas y el sistema de conducción sigue un
+   recorrido aproximado. No es una reconstrucción anatómica ni del paciente: no hay imágenes de
+   TC o RM detrás.
+2. **El LED marca la región predicha**, ubicada con los mismos ángulos que el esquema 2D de los
+   anillos AV (proyección OAI aproximada). Esa correspondencia también debe revisarla el equipo
+   de electrofisiología.
+3. **Tiempos ilustrativos.** El ciclo dura 0,7 s (unos 86 lpm). Los retrasos (nódulo AV, His,
+   ramas) y el cruce por la vía accesoria son didácticos, no medidos.
+4. **Requiere WebGL.** En equipos sin aceleración gráfica puede ir lento; si no hay WebGL, se avisa
+   y queda el esquema 2D.
+
 ## Detección de datos personales en la imagen
 
 1. **Cómo funciona.** Al cargar la imagen, Claude busca nombre, apellido, documento, historia
@@ -82,5 +95,5 @@ versiones mayores siguientes en una tarea aparte, volviendo a correr las pruebas
 - No considera vías múltiples, preexcitación mínima/intermitente, cardiopatías congénitas
   (p. ej., Ebstein) ni otras situaciones en las que el algoritmo pierde exactitud.
 - No hay validación en población pediátrica dentro de esta herramienta.
-- Sin corazón 3D, base de datos, inicio de sesión ni despliegue público.
+- Sin inicio de sesión ni despliegue público.
 - No se guarda ninguna imagen. Los datos anónimos se guardan solo al pulsar "Guardar en el registro".

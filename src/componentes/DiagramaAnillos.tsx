@@ -10,9 +10,9 @@ import { POR_CODIGO_EEF, type CodigoEEF } from '../registro/eef';
  * Ángulos en grados, 0 = arriba, sentido horario.
  */
 
-type Anillo = 't' | 'm' | 'sc';
+export type Anillo = 't' | 'm' | 'sc';
 
-interface Segmento {
+export interface Segmento {
   anillo: Anillo;
   desde: number;
   hasta: number;
@@ -26,7 +26,7 @@ const RADIO_SC = M.r + 17;
 const GROSOR = 11;
 const SEPARACION = 2.5; // grados entre segmentos vecinos
 
-const SEGMENTOS: Partial<Record<CodigoRegion, Segmento[]>> = {
+export const SEGMENTOS: Partial<Record<CodigoRegion, Segmento[]>> = {
   RA_RAL: [{ anillo: 't', desde: 300, hasta: 352 }],
   RL: [{ anillo: 't', desde: 250, hasta: 300 }],
   RP_RPL: [{ anillo: 't', desde: 198, hasta: 250 }],

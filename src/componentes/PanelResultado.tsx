@@ -1,6 +1,8 @@
 import { NOMBRES_CAMPOS, NOMBRES_VALORES } from '../algoritmo/catalogo';
 import type { EstadoResultado, ResultadoArruda } from '../algoritmo/tipos';
+import { useState } from 'react';
 import { DiagramaAnillos } from './DiagramaAnillos';
+import { Visor3D } from './Visor3D';
 
 const ETIQUETA_ESTADO: Record<EstadoResultado, string> = {
   region_predicha: 'Región predicha',
@@ -16,6 +18,7 @@ interface Props {
 }
 
 export function PanelResultado({ resultado, desactualizado, onReiniciar }: Props) {
+  const [ver3D, setVer3D] = useState(false);
   if (!resultado) {
     return (
       <section className="panel-resultado vacio" aria-labelledby="titulo-resultado">
@@ -74,6 +77,16 @@ export function PanelResultado({ resultado, desactualizado, onReiniciar }: Props
       <p className="mensaje">{r.mensaje}</p>
 
       {r.regiones.length > 0 && <DiagramaAnillos predichas={r.regiones.map((x) => x.codigo)} />}
+      {r.regiones.length > 0 && (
+        <button type="button" className="boton-3d" onClick={() => setVer3D(true)} disabled={desactualizado}>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Z" />
+            <path d="M4 7.5 12 12l8-4.5M12 12v9" />
+          </svg>
+          3D location
+        </button>
+      )}
+      {ver3D && <Visor3D regiones={r.regiones} onCerrar={() => setVer3D(false)} />}
 
       {r.datosFaltantes.length > 0 && (
         <div className="faltantes">
