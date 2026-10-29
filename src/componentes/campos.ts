@@ -43,7 +43,7 @@ export const CAMPOS: Record<CampoECG, DefCampo> = {
   deltaI: { ...delta('deltaI', 'I'), derivacion: 'DI', pregunta: '¿Cómo es la polaridad (+ o -) de la onda Delta?' },
   deltaII: delta('deltaII', 'II'),
   deltaAVR: delta('deltaAVR', 'aVR'),
-  deltaAVF: delta('deltaAVF', 'aVF'),
+  deltaAVF: { ...delta('deltaAVF', 'aVF'), pregunta: '¿Cómo es la polaridad de la onda Delta?' },
   deltaV1: delta('deltaV1', 'V1'),
   rsIII: {
     campo: 'rsIII',

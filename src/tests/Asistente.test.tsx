@@ -22,7 +22,7 @@ describe('Asistente guiado', () => {
     render(<Asistente onSalir={() => {}} />);
     expect(pregunta()).toHaveTextContent('DI¿Cómo es la polaridad (+ o -) de la onda Delta?');
     await responder(u, 'Negativa');
-    expect(pregunta()).toHaveTextContent('onda delta en aVF');
+    expect(pregunta()).toHaveTextContent('aVF¿Cómo es la polaridad de la onda Delta?');
     await responder(u, 'Positiva');
     expect(screen.queryByTestId('pregunta')).not.toBeInTheDocument();
     expect(screen.getByTestId('region')).toHaveTextContent('LL/LAL');
