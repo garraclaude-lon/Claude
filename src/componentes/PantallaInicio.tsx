@@ -7,8 +7,7 @@ interface Props {
 
 export function PantallaInicio({ onElegir }: Props) {
   return (
-    <section className="inicio" aria-labelledby="titulo-inicio">
-      <h2 id="titulo-inicio">¿Cómo querés trabajar?</h2>
+    <section className="inicio" aria-label="Modo de trabajo">
       <div className="inicio-opciones">
         <BotonModo
           icono={<IconoCamara />}

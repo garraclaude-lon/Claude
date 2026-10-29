@@ -81,7 +81,8 @@ describe('Pantalla de inicio', () => {
     render(<App obtenerLector={sinIA} />);
     await u.click(screen.getByRole('button', { name: /Subir ECG/ }));
     await u.click(screen.getByRole('button', { name: 'Volver al inicio' }));
-    expect(screen.getByRole('heading', { name: '¿Cómo querés trabajar?' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Modo de trabajo' })).toBeInTheDocument();
+    expect(screen.queryByText('¿Cómo querés trabajar?')).not.toBeInTheDocument();
   });
 });
 

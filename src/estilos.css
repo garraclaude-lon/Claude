@@ -229,7 +229,6 @@ main { display: grid; gap: 20px; }
 .aviso-faltante { color: var(--error); font-weight: 500; }
 
 /* ---------- Pantalla de inicio ---------- */
-.inicio h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 20px; }
 .inicio-opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 22px; }
 .tarjeta-modo {
   --rx: 0deg; --ry: 0deg; --brillo-x: 50%; --brillo-y: 0%;
