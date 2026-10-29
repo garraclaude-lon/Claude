@@ -39,7 +39,8 @@ const delta = (campo: CampoECG, derivacion: string): DefCampo => ({
 });
 
 export const CAMPOS: Record<CampoECG, DefCampo> = {
-  deltaI: delta('deltaI', 'I'),
+  // DI: rótulo y pregunta pedidos por el equipo de EEF
+  deltaI: { ...delta('deltaI', 'I'), derivacion: 'DI', pregunta: '¿Cómo es la polaridad (+ o -) de la onda Delta?' },
   deltaII: delta('deltaII', 'II'),
   deltaAVR: delta('deltaAVR', 'aVR'),
   deltaAVF: delta('deltaAVF', 'aVF'),

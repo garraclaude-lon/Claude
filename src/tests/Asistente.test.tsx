@@ -20,7 +20,7 @@ describe('Asistente guiado', () => {
   it('solo pregunta lo que la rama necesita (I negativa → aVF, sin R/S en V1)', async () => {
     const u = userEvent.setup();
     render(<Asistente onSalir={() => {}} />);
-    expect(pregunta()).toHaveTextContent('onda delta en I ');
+    expect(pregunta()).toHaveTextContent('DI¿Cómo es la polaridad (+ o -) de la onda Delta?');
     await responder(u, 'Negativa');
     expect(pregunta()).toHaveTextContent('onda delta en aVF');
     await responder(u, 'Positiva');
@@ -51,7 +51,7 @@ describe('Asistente guiado', () => {
     await responder(u, 'Negativa');
     expect(pregunta()).toHaveTextContent('aVF');
     await u.click(screen.getByRole('button', { name: '← Atrás' }));
-    expect(pregunta()).toHaveTextContent('onda delta en I ');
+    expect(pregunta()).toHaveTextContent('DI¿Cómo es la polaridad (+ o -) de la onda Delta?');
   });
 
   it('un criterio no evaluable termina como indeterminado sin inventar región', async () => {
@@ -74,7 +74,7 @@ describe('Asistente guiado', () => {
     };
     render(<Asistente onSalir={() => {}} propuesta={propuesta} />);
     // Con todas las sugerencias disponibles, igual se muestra la primera pregunta.
-    expect(pregunta()).toHaveTextContent('onda delta en I ');
+    expect(pregunta()).toHaveTextContent('DI¿Cómo es la polaridad (+ o -) de la onda Delta?');
     expect(pregunta()).toHaveTextContent('La IA sugiere: negativa');
     expect(within(pregunta()).getByRole('button', { name: /Negativa.*Sugerida por IA/ })).toBeInTheDocument();
     // El profesional elige distinto de la IA.

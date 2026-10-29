@@ -44,7 +44,7 @@ describe('Pantalla de inicio', () => {
     expect(screen.getByRole('heading', { name: 'Datos del paciente' })).toBeInTheDocument();
     await llenarPaciente(u);
     expect(screen.getByTestId('chip-paciente')).toHaveTextContent('Femenino · 7 a 6 m · Escolar');
-    expect(screen.getByTestId('pregunta')).toHaveTextContent('onda delta en I ');
+    expect(screen.getByTestId('pregunta')).toHaveTextContent('DI¿Cómo es la polaridad (+ o -) de la onda Delta?');
   });
 
   it('no avanza sin sexo y edad válidos', async () => {
