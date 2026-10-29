@@ -22,7 +22,7 @@ describe('Asistente guiado', () => {
     render(<Asistente onSalir={() => {}} />);
     expect(pregunta()).toHaveTextContent('DI¿Cómo es la polaridad (+ o -) de la onda Delta?');
     await responder(u, 'Negativa');
-    expect(pregunta()).toHaveTextContent('aVF¿Cómo es la polaridad de la onda Delta?');
+    expect(pregunta()).toHaveTextContent('aVF¿Cómo es la polaridad (+ o -) de la onda Delta?');
     await responder(u, 'Positiva');
     expect(screen.queryByTestId('pregunta')).not.toBeInTheDocument();
     expect(screen.getByTestId('region')).toHaveTextContent('LL/LAL');
@@ -35,11 +35,11 @@ describe('Asistente guiado', () => {
     await responder(u, 'Positiva'); // I
     expect(pregunta()).toHaveTextContent('R respecto de la onda S en V1');
     await responder(u, 'R ≤ S'); // R/S V1
-    expect(pregunta()).toHaveTextContent('onda delta en II');
+    expect(pregunta()).toHaveTextContent('II¿Cómo es la polaridad (+ o -) de la onda Delta?');
     await responder(u, 'Positiva'); // II
-    expect(pregunta()).toHaveTextContent('onda delta en V1');
+    expect(pregunta()).toHaveTextContent('V1¿Cómo es la polaridad (+ o -) de la onda Delta?');
     await responder(u, 'Positiva'); // V1
-    expect(pregunta()).toHaveTextContent('onda delta en aVR');
+    expect(pregunta()).toHaveTextContent('aVR¿Cómo es la polaridad (+ o -) de la onda Delta?');
     await responder(u, 'Negativa'); // aVR → usa II ya respondida
     expect(screen.getByTestId('region')).toHaveTextContent('RL');
     expect(screen.getByTestId('ruta').querySelectorAll('li')).toHaveLength(4);

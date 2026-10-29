@@ -33,17 +33,18 @@ const delta = (campo: CampoECG, derivacion: string): DefCampo => ({
   campo,
   derivacion,
   etiqueta: `Onda delta en ${derivacion}`,
-  pregunta: `¿Cómo es la onda delta en ${derivacion} durante sus primeros 20 ms?`,
+  // La derivación se ve en el recuadro de la pregunta.
+  pregunta: '¿Cómo es la polaridad (+ o -) de la onda Delta?',
   ayuda: AYUDA_DELTA,
   opciones: OPCIONES_POLARIDAD,
 });
 
 export const CAMPOS: Record<CampoECG, DefCampo> = {
-  // DI: rótulo y pregunta pedidos por el equipo de EEF
-  deltaI: { ...delta('deltaI', 'I'), derivacion: 'DI', pregunta: '¿Cómo es la polaridad (+ o -) de la onda Delta?' },
+  // DI: rótulo pedido por el equipo de EEF
+  deltaI: { ...delta('deltaI', 'I'), derivacion: 'DI' },
   deltaII: delta('deltaII', 'II'),
   deltaAVR: delta('deltaAVR', 'aVR'),
-  deltaAVF: { ...delta('deltaAVF', 'aVF'), pregunta: '¿Cómo es la polaridad de la onda Delta?' },
+  deltaAVF: delta('deltaAVF', 'aVF'),
   deltaV1: delta('deltaV1', 'V1'),
   rsIII: {
     campo: 'rsIII',
