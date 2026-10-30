@@ -445,7 +445,8 @@ function arbolPurkinje(inicio, dir, largo, nivel, izquierdo, prefijo, contador) 
   const nombre = `${prefijo}_n${nivel}_${contador.n++}`;
   trayectos[nombre] = pts;
   purkinje.push(nombre);
-  if (nivel >= 3) return;
+  // Red simplificada: solo las ramas principales (sin las fibras más finas)
+  if (nivel >= 1) return;
   const hijos = nivel === 0 ? 3 : 2;
   for (let h = 0; h < hijos; h++) {
     const n = normal(p);

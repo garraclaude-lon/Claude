@@ -28,7 +28,7 @@
    La rama derecha baja por la cara derecha del septum y cruza por la banda moderadora hasta el
    papilar anterior del VD. La rama izquierda es un tronco corto que se divide en la hemirrama
    anterior (hacia el papilar anterolateral) y la posterior (hacia el posteromedial), con fibras
-   septales intermedias en abanico. La red de Purkinje se genera como árboles ramificados que
+   septales intermedias en abanico. La red de Purkinje se simplificó a sus ramas principales, que
    crecen sobre el endocardio desde los haces (con semilla fija, siempre igual). El estilo visual
    (tono neutro, interior rojizo, conducción amarilla pálida) se tomó de imágenes de referencia
    aportadas por el equipo, usadas solo como guía. Son ilustrativos, no anatómicamente exactos.
