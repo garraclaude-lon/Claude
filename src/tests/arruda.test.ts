@@ -16,14 +16,14 @@ describe('Paso 1 — pared libre izquierda', () => {
     ['I negativa', { deltaI: 'negativa' }],
     ['I isoeléctrica', { deltaI: 'isoelectrica' }],
     ['R > S en V1 con I positiva', { deltaI: 'positiva', rsV1: 'r_mayor_s' }],
-  ] as const)('%s + aVF positiva → LL/LAL', (_n, p) => {
+  ] as const)('%s + aVF positiva → IL/IAL', (_n, p) => {
     const r = aplicarArruda(e({ ...p, deltaAVF: 'positiva' }));
     expect(r.estado).toBe('region_predicha');
     expect(r.regiones.map((x) => x.codigo)).toEqual(['LL_LAL']);
     expect(r.ruta).toHaveLength(1);
   });
 
-  it.each(['negativa', 'isoelectrica'] as const)('aVF %s → LP/LPL', (avf) => {
+  it.each(['negativa', 'isoelectrica'] as const)('aVF %s → IP/IPL', (avf) => {
     expect(codigos(e({ deltaI: 'negativa', deltaAVF: avf }))).toEqual(['LP_LPL']);
   });
 
@@ -116,7 +116,7 @@ describe('Paso 2 — posteroseptal subepicárdica', () => {
 });
 
 describe('Paso 3 — vías septales', () => {
-  it.each(['negativa', 'isoelectrica'] as const)('V1 %s + aVF negativa → PSTA/CSOs', (v1) => {
+  it.each(['negativa', 'isoelectrica'] as const)('V1 %s + aVF negativa → PST/OSC', (v1) => {
     expect(codigos(e({ ...NO_PASO2, deltaV1: v1, deltaAVF: 'negativa' }))).toEqual(['PSTA_CSOS']);
   });
 
@@ -126,11 +126,11 @@ describe('Paso 3 — vías septales', () => {
     expect(r.regiones.map((x) => x.codigo)).toEqual(['PSTA', 'PSMA']);
   });
 
-  it('aVF positiva + R > S en III → AS/RAPS', () => {
+  it('aVF positiva + R > S en III → AS/PSAD', () => {
     expect(codigos(e({ ...NO_PASO2, deltaV1: 'negativa', deltaAVF: 'positiva', rsIII: 'r_mayor_s' }))).toEqual(['AS_RAPS']);
   });
 
-  it('aVF positiva + R < S en III → MSTA', () => {
+  it('aVF positiva + R < S en III → MST', () => {
     expect(codigos(e({ ...NO_PASO2, deltaV1: 'negativa', deltaAVF: 'positiva', rsIII: 'r_menor_s' }))).toEqual(['MSTA']);
   });
 
@@ -175,15 +175,15 @@ describe('Paso 3 — vías septales', () => {
 });
 
 describe('Paso 4 — pared libre derecha', () => {
-  it('aVR positiva → RA/RAL', () => {
+  it('aVR positiva → DA/DAL', () => {
     expect(codigos(e({ ...NO_PASO3, deltaAVR: 'positiva' }))).toEqual(['RA_RAL']);
   });
 
-  it.each(['negativa', 'isoelectrica'] as const)('aVR %s + II positiva → RL', (avr) => {
+  it.each(['negativa', 'isoelectrica'] as const)('aVR %s + II positiva → DL', (avr) => {
     expect(codigos(e({ ...NO_PASO3, deltaAVR: avr, deltaII: 'positiva' }))).toEqual(['RL']);
   });
 
-  it.each(['negativa', 'isoelectrica'] as const)('aVR %s + II isoeléctrica → RP/RPL', (avr) => {
+  it.each(['negativa', 'isoelectrica'] as const)('aVR %s + II isoeléctrica → DP/DPL', (avr) => {
     expect(codigos(e({ ...NO_PASO3, deltaAVR: avr, deltaII: 'isoelectrica' }))).toEqual(['RP_RPL']);
   });
 

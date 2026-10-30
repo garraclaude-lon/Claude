@@ -11,19 +11,19 @@ Los pasos se evalúan en orden; el primero que clasifica o se detiene termina el
 
 | Paso | Condición | Resultado |
 |---|---|---|
-| 1 | I negativa/isoeléctrica **o** R > S en V1 | Pared libre izquierda → aVF positiva: **LL/LAL**; aVF negativa/isoeléctrica: **LP/LPL** |
+| 1 | I negativa/isoeléctrica **o** R > S en V1 | Pared libre izquierda → aVF positiva: **IL/IAL**; aVF negativa/isoeléctrica: **IP/IPL** |
 | 1 | I positiva **y** R ≤ S en V1 | continúa al paso 2 |
 | 2 | II negativa | **Posteroseptal subepicárdica** |
 | 2 | II positiva/isoeléctrica | continúa al paso 3 |
-| 3 | V1 negativa/isoeléctrica → aVF negativa | **PSTA/CSOs** |
-| 3 | … aVF isoeléctrica | **PSTA o PSMA** (se muestran ambas) |
-| 3 | … aVF positiva → R > S en III | **AS/RAPS** |
-| 3 | … aVF positiva → R < S en III | **MSTA** |
+| 3 | V1 negativa/isoeléctrica → aVF negativa | **PST/OSC** |
+| 3 | … aVF isoeléctrica | **PST o PSM** (se muestran ambas) |
+| 3 | … aVF positiva → R > S en III | **AS/PSAD** |
+| 3 | … aVF positiva → R < S en III | **MST** |
 | 3 | … aVF positiva → R = S o no evaluable en III | indeterminado |
 | 3 | V1 positiva | continúa al paso 4 |
-| 4 | aVR positiva | **RA/RAL** |
-| 4 | aVR negativa/isoeléctrica → II positiva | **RL** |
-| 4 | … II isoeléctrica | **RP/RPL** |
+| 4 | aVR positiva | **DA/DAL** |
+| 4 | aVR negativa/isoeléctrica → II positiva | **DL** |
+| 4 | … II isoeléctrica | **DP/DPL** |
 | 4 | … II negativa | no clasificable |
 
 ## Datos vacíos y "no evaluable"
@@ -34,3 +34,23 @@ Los pasos se evalúan en orden; el primero que clasifica o se detiene termina el
 - Paso 1 con lógica "o": basta con un criterio que se cumpla. Para descartarlo hacen falta
   ambos (I positiva y R ≤ S en V1). Si uno no cumple y el otro está vacío → datos insuficientes;
   si el otro es no evaluable → indeterminado.
+
+## Siglas de las localizaciones (en español)
+
+En pantalla las regiones se muestran con siglas en español. Los códigos internos del registro
+(`LL_LAL`, `PSTA`, `MSTA`…) no cambian, para no alterar los casos ya guardados.
+
+| Sigla | Localización | Sigla original (Arruda 1998) | Código interno |
+|---|---|---|---|
+| IL/IAL | Izquierda lateral o anterolateral | LL/LAL | `LL_LAL` |
+| IP/IPL | Izquierda posterior o posterolateral | LP/LPL | `LP_LPL` |
+| PS subepicárdica | Posteroseptal subepicárdica | PS subepicardial | `PS_SUBEPI` |
+| PST/OSC | Anillo tricuspídeo posteroseptal u ostium del seno coronario | PSTA/CSOs | `PSTA_CSOS` |
+| PST | Anillo tricuspídeo posteroseptal | PSTA | `PSTA` |
+| PSM | Anillo mitral posteroseptal | PSMA | `PSMA` |
+| AS/PSAD | Anteroseptal o paraseptal anterior derecha | AS/RAPS | `AS_RAPS` |
+| MST | Anillo tricuspídeo medioseptal | MSTA | `MSTA` |
+| DA/DAL | Derecha anterior o anterolateral | RA/RAL | `RA_RAL` |
+| DL | Derecha lateral | RL | `RL` |
+| DP/DPL | Derecha posterior o posterolateral | RP/RPL | `RP_RPL` |
+

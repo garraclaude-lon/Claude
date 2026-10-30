@@ -87,7 +87,7 @@ describe('Pantalla de inicio', () => {
 });
 
 describe('Formulario completo', () => {
-  it('calcula LL/LAL y la ruta mostrada coincide con el resultado', async () => {
+  it('calcula IL/IAL y la ruta mostrada coincide con el resultado', async () => {
     const u = userEvent.setup();
     render(<App obtenerLector={sinIA} />);
     await abrirFormulario(u);
@@ -99,10 +99,10 @@ describe('Formulario completo', () => {
     expect(within(panel).getByTestId('estado')).toHaveTextContent('Región predicha');
     const regiones = within(panel).getAllByTestId('region');
     expect(regiones).toHaveLength(1);
-    expect(regiones[0]).toHaveTextContent('LL/LAL');
+    expect(regiones[0]).toHaveTextContent('IL/IAL');
     const ruta = within(panel).getByTestId('ruta');
     expect(within(ruta).getAllByRole('listitem')).toHaveLength(1);
-    expect(ruta).toHaveTextContent('LL/LAL');
+    expect(ruta).toHaveTextContent('IL/IAL');
     expect(panel).toHaveTextContent('No es una localización confirmada');
     expect(panel).toHaveTextContent('J Cardiovasc Electrophysiol');
     expect(panel).toHaveTextContent('arruda-1998-impl-0.1.0');
@@ -132,7 +132,7 @@ describe('Formulario completo', () => {
     expect(screen.getByText(/Modificaste los datos/)).toBeInTheDocument();
     await u.click(screen.getByRole('button', { name: 'Calcular localización' }));
     expect(screen.queryByText(/Modificaste los datos/)).not.toBeInTheDocument();
-    expect(screen.getByTestId('region')).toHaveTextContent('LP/LPL');
+    expect(screen.getByTestId('region')).toHaveTextContent('IP/IPL');
   });
 
   it('reiniciar limpia el formulario y el resultado', async () => {

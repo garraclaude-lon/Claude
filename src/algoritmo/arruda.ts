@@ -103,12 +103,12 @@ export function paso1(e: EntradaECG): SalidaPaso {
     let decision: string;
     switch (e.deltaAVF) {
       case 'positiva':
-        decision = `${base}: positiva → región LL/LAL.`;
+        decision = `${base}: positiva → región IL/IAL.`;
         fin = prediccion(['LL_LAL'], 'Pared libre izquierda con delta en aVF positiva.');
         break;
       case 'negativa':
       case 'isoelectrica':
-        decision = `${base}: ${txt(e.deltaAVF)} → región LP/LPL.`;
+        decision = `${base}: ${txt(e.deltaAVF)} → región IP/IPL.`;
         fin = prediccion(['LP_LPL'], `Pared libre izquierda con delta en aVF ${txt(e.deltaAVF)}.`);
         break;
       case 'no_evaluable':
@@ -228,10 +228,10 @@ export function paso3(e: EntradaECG): SalidaPaso {
 
   switch (e.deltaAVF) {
     case 'negativa':
-      return traza(`${base}: negativa → PSTA/CSOs.`, prediccion(['PSTA_CSOS'], 'Septal con delta en aVF negativa.'));
+      return traza(`${base}: negativa → PST/OSC.`, prediccion(['PSTA_CSOS'], 'Septal con delta en aVF negativa.'));
     case 'isoelectrica':
       return traza(
-        `${base}: isoeléctrica → PSTA o PSMA (el algoritmo no discrimina entre ambas).`,
+        `${base}: isoeléctrica → PST o PSM (el algoritmo no discrimina entre ambas).`,
         prediccion(['PSTA', 'PSMA'], 'Septal con delta en aVF isoeléctrica: dos localizaciones posibles.'),
       );
     case 'no_evaluable':
@@ -247,9 +247,9 @@ export function paso3(e: EntradaECG): SalidaPaso {
   const base2 = `${base}: positiva. Se evalúa R/S en III`;
   switch (e.rsIII) {
     case 'r_mayor_s':
-      return traza(`${base2}: R > S → AS/RAPS.`, prediccion(['AS_RAPS'], 'Septal, aVF positiva y R > S en III.'));
+      return traza(`${base2}: R > S → AS/PSAD.`, prediccion(['AS_RAPS'], 'Septal, aVF positiva y R > S en III.'));
     case 'r_menor_s':
-      return traza(`${base2}: R < S → MSTA.`, prediccion(['MSTA'], 'Septal, aVF positiva y R < S en III.'));
+      return traza(`${base2}: R < S → MST.`, prediccion(['MSTA'], 'Septal, aVF positiva y R < S en III.'));
     case 'iguales':
       return traza(`${base2}: R = S → indeterminado.`, {
         estado: 'indeterminado',
@@ -281,7 +281,7 @@ export function paso4(e: EntradaECG): SalidaPaso {
 
   switch (e.deltaAVR) {
     case 'positiva':
-      return traza('Sí (delta en aVR positiva) → RA/RAL.', prediccion(['RA_RAL'], 'Delta en aVR positiva.'));
+      return traza('Sí (delta en aVR positiva) → DA/DAL.', prediccion(['RA_RAL'], 'Delta en aVR positiva.'));
     case 'no_evaluable':
       return traza('Delta en aVR no evaluable → se detiene.', noEvaluable('La onda delta en aVR'));
     case null:
@@ -294,9 +294,9 @@ export function paso4(e: EntradaECG): SalidaPaso {
   const base = `No (delta en aVR ${txt(e.deltaAVR)}). Se evalúa II`;
   switch (e.deltaII) {
     case 'positiva':
-      return traza(`${base}: positiva → RL.`, prediccion(['RL'], 'aVR no positiva y delta en II positiva.'));
+      return traza(`${base}: positiva → DL.`, prediccion(['RL'], 'aVR no positiva y delta en II positiva.'));
     case 'isoelectrica':
-      return traza(`${base}: isoeléctrica → RP/RPL.`, prediccion(['RP_RPL'], 'aVR no positiva y delta en II isoeléctrica.'));
+      return traza(`${base}: isoeléctrica → DP/DPL.`, prediccion(['RP_RPL'], 'aVR no positiva y delta en II isoeléctrica.'));
     case 'negativa':
       return traza(`${base}: negativa → no clasificable.`, {
         estado: 'no_clasificable',

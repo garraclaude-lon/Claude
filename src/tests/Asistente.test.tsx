@@ -25,11 +25,11 @@ describe('Asistente guiado', () => {
     expect(pregunta()).toHaveTextContent('aVF¿Cómo es la polaridad (+ o -) de la onda Delta?');
     await responder(u, 'Positiva');
     expect(screen.queryByTestId('pregunta')).not.toBeInTheDocument();
-    expect(screen.getByTestId('region')).toHaveTextContent('LL/LAL');
-    expect(screen.getByTestId('ruta')).toHaveTextContent('LL/LAL');
+    expect(screen.getByTestId('region')).toHaveTextContent('IL/IAL');
+    expect(screen.getByTestId('ruta')).toHaveTextContent('IL/IAL');
   });
 
-  it('recorre los cuatro pasos hasta RL', async () => {
+  it('recorre los cuatro pasos hasta DL', async () => {
     const u = userEvent.setup();
     render(<Asistente onSalir={() => {}} />);
     await responder(u, 'Positiva'); // I
@@ -41,7 +41,7 @@ describe('Asistente guiado', () => {
     await responder(u, 'Positiva'); // V1
     expect(pregunta()).toHaveTextContent('aVR¿Cómo es la polaridad (+ o -) de la onda Delta?');
     await responder(u, 'Negativa'); // aVR → usa II ya respondida
-    expect(screen.getByTestId('region')).toHaveTextContent('RL');
+    expect(screen.getByTestId('region')).toHaveTextContent('DL');
     expect(screen.getByTestId('ruta').querySelectorAll('li')).toHaveLength(4);
   });
 
@@ -80,7 +80,7 @@ describe('Asistente guiado', () => {
     // El profesional elige distinto de la IA.
     await responder(u, 'Isoeléctrica');
     await responder(u, 'Negativa'); // aVF
-    expect(screen.getByTestId('region')).toHaveTextContent('LP/LPL');
+    expect(screen.getByTestId('region')).toHaveTextContent('IP/IPL');
     const tabla = screen.getByRole('heading', { name: /Propuesta de la IA frente/ }).parentElement!;
     expect(tabla).toHaveTextContent('Coincidencia en 0 de 2');
   });

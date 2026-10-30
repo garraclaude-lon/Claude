@@ -17,7 +17,7 @@ describe('Botón Ubicación 3D', () => {
     render(<PanelResultado resultado={aplicarArruda(e({ deltaI: 'negativa', deltaAVF: 'positiva' }))} desactualizado={false} onReiniciar={() => {}} />);
     await u.click(screen.getByRole('button', { name: 'Ubicación 3D' }));
     const visor = screen.getByRole('dialog', { name: 'Ubicación 3D' });
-    expect(visor).toHaveTextContent('Vía accesoria predicha: LL/LAL');
+    expect(visor).toHaveTextContent('Vía accesoria predicha: IL/IAL');
     expect(within(visor).getByTestId('sin-webgl')).toBeInTheDocument();
     expect(visor).toHaveTextContent('adulto de referencia, no del paciente');
     expect(visor).toHaveTextContent('Z-Anatomy');
@@ -42,12 +42,12 @@ describe('Botón Ubicación 3D', () => {
     }
   });
 
-  it('muestra las dos opciones cuando el algoritmo no discrimina (PSTA o PSMA)', async () => {
+  it('muestra las dos opciones cuando el algoritmo no discrimina (PST o PSM)', async () => {
     const u = userEvent.setup();
     const r = aplicarArruda(e({ deltaI: 'positiva', rsV1: 'r_menor_igual_s', deltaII: 'positiva', deltaV1: 'negativa', deltaAVF: 'isoelectrica' }));
     render(<PanelResultado resultado={r} desactualizado={false} onReiniciar={() => {}} />);
     await u.click(screen.getByRole('button', { name: 'Ubicación 3D' }));
-    expect(screen.getByRole('dialog')).toHaveTextContent('PSTA o PSMA');
+    expect(screen.getByRole('dialog')).toHaveTextContent('PST o PSM');
     await u.click(screen.getByRole('button', { name: 'Cerrar' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
