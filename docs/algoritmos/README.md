@@ -17,7 +17,7 @@ el artículo original o su figura. Las fuentes secundarias sirven de guía, no d
 | Fitzpatrick 1994 | Transición R/S, suma de deltas en II, III, aVF, vector delta | **Parcial** | Resúmenes secundarios |
 | d'Avila 1995 | Polaridad del QRS | **Sin datos** del árbol | — |
 | Sousa Ferro 2025 | Revisión comparativa (no es un algoritmo) | Solo cita | — |
-| SMART-WPW 2025 | Delta en V1 y V3, positividad/negatividad de la delta en miembros; 12 sitios en reloj | **Sin árbol** (97 % en 260 pacientes; 97 % frente a 62 % de Arruda en menores de 18) | Resúmenes (Heart Rhythm 2025, PubMed 40324514) |
+| SMART-WPW 2025 | Delta en V1, polaridad en V3, cuántas inferiores negativas; 12 sitios en reloj | **Completo** (97 % en 260 pacientes; 97 % frente a 62 % de Arruda en menores de 18) | PDF del artículo aportado por el equipo — ver `SMART-WPW.md` |
 
 ## Iturralde 1996 — patrones (resumen del artículo, 102 pacientes adultos)
 
