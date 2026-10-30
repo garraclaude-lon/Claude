@@ -20,29 +20,29 @@ romanos). La figura original no se incluye en este repositorio público; esta es
 
 ## Anillo tricuspídeo (TV)
 
-| Hora | Rótulo en la figura | Región | Sigla en la app |
+Sectores confirmados por las figuras de patrones ECG por hora aportadas por el equipo.
+
+| Hora | Sector (figura) | Región | Sigla en la app |
 |---|---|---|---|
-| XI–XII | A (anterior) | Anterior derecha | DA/DAL |
-| I | AS (anteroseptal) | Anteroseptal derecha (His entre I y II) | AS/PSAD |
-| II | — (entre AS y MS; parahisiano) | Anteroseptal / parahisiana | AS/PSAD |
-| III | MS (medioseptal) | Medioseptal | MST |
-| IV | MSP | Medioseptal posterior (a confirmar) | MST o PST (a definir) |
-| V | PS (posteroseptal) | Posteroseptal derecha | PST |
-| VI–VII | P (posterior) | Posterior derecha | DP/DPL |
-| VIII | LP (lateral posterior) | Posterolateral derecha | DP/DPL |
-| IX | — | Lateral derecha | DL |
-| X | LA (lateral anterior) | Anterolateral derecha | DA/DAL |
+| XI–XII | Anterior (A) | Anterior derecha | DA/DAL |
+| IX–X | Lateral‑anterior (LA) | Anterolateral / lateral derecha | DA/DAL (IX también DL) |
+| VIII | Lateral‑posterior (LP) | Posterolateral derecha | DP/DPL |
+| VI–VII | Posterior (P) | Posterior derecha | DP/DPL |
+| V | Posteroseptal (PS) | Posteroseptal derecha | PST |
+| IV | Medioseptal posterior (MSP) | Entre medioseptal y posteroseptal | MST o PST (provisorio) |
+| III | Medioseptal (MS) | Medioseptal | MST |
+| I–II | Anteroseptal (AS) | Anteroseptal / parahisiana (His entre I y II) | AS/PSAD |
 
 ## Anillo mitral (MV)
 
-| Hora | Rótulo en la figura | Región | Sigla en la app |
+| Hora | Sector (figura) | Región | Sigla en la app |
 |---|---|---|---|
-| I–III | L (lateral) | Lateral / anterolateral izquierda | IL/IAL |
-| IV | HPL | Posterolateral alta (a confirmar) | IP/IPL |
-| V | LPL | Posterolateral baja (a confirmar) | IP/IPL |
-| VI–VII | PS & P | Posteroseptal y posterior izquierda | PSM / IP (a definir) |
-| VIII | — | Posteroseptal izquierda | PSM |
-| IX–XII | (sin color) | Septal anterior y continuidad mitroaórtica: sin vías en el esquema | — |
+| I–III | Lateral (L) | Lateral / anterolateral izquierda | IL/IAL |
+| IV | Posterolateral alta (HPL, *high posterolateral*) | Posterolateral izquierda | IP/IPL |
+| V | Posterolateral baja (LPL, *low posterolateral*) | Posterolateral izquierda | IP/IPL |
+| VI–VII | Posterior y posteroseptal (PS & P) | Posteroseptal o posterior izquierda | PSM o IP/IPL |
+| VIII | Posteroseptal | Posteroseptal izquierda | PSM |
+| IX–XII | Sin color: septal anterior y continuidad mitroaórtica | Sin vías en el esquema | — |
 
 ## Polaridad de la onda delta en las inferiores (II, III, aVF)
 
@@ -64,10 +64,23 @@ o "Mitral IV"). La hora se convierte a las regiones de la app con estas tablas
 real quedó cada algoritmo. Mientras no se confirmen los puntos de abajo, TV IV cuenta como acierto
 para MST o PST, y MV VI–VII para PSM o IP/IPL.
 
+## Patrones ECG por hora (figuras del equipo)
+
+El equipo aportó dos láminas con el **ECG de 12 derivaciones típico de cada sector** (una para el
+tricuspídeo, con 8 sectores, y otra para el mitral, con 4). Confirman los sectores y las horas de
+las tablas de arriba y la regla de las inferiores: delta **positiva** en II, III y aVF en los
+sectores anteriores y laterales del mitral; **negativa** en los posteriores y posteroseptales.
+
+La polaridad derivación por derivación de cada patrón **no se transcribió**: las imágenes llegaron
+con baja resolución y una lectura equivocada contaminaría el algoritmo. Hace falta la figura en
+archivo de mayor resolución (o la fuente original) para cargarla como tabla de patrones.
+
 ## Puntos a confirmar con el equipo
 
-1. Significado de **MSP**, **HPL** y **LPL** (propuesta: medioseptal posterior, posterolateral alta
-   y posterolateral baja).
-2. **TV IV (MSP):** ¿se cuenta como medioseptal (MST) o posteroseptal (PST)?
-3. **MV VI–VII (PS & P):** ¿posteroseptal izquierda (PSM) o posterior izquierda (IP/IPL)?
-4. Límites exactos de cada sector (la lectura de la figura es aproximada a la hora entera).
+1. ~~Significado de MSP, HPL y LPL~~ — resuelto por las figuras: medioseptal posterior,
+   posterolateral alta (*high*) y posterolateral baja (*low*).
+2. **TV IV (MSP):** ¿se cuenta como acierto para medioseptal (MST), posteroseptal (PST) o ambos?
+   Hoy: ambos.
+3. **MV VI–VII (posterior y posteroseptal):** hoy cuenta como acierto para PSM o IP/IPL.
+4. **TV IX:** la figura lo incluye en lateral‑anterior (IX–X); hoy cuenta para DA/DAL y para DL
+   (derecha lateral de Arruda).

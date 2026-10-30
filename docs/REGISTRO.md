@@ -53,10 +53,10 @@ tres situaciones: `PS_SUBEPI` (posteroseptal subepicárdica), `MULTIPLES` y `NO_
 | III | medioseptal → MST | lateral → IL/IAL |
 | IV | medioseptal posterior → MST, PST o PST/OSC *(provisorio)* | posterolateral alta → IP/IPL |
 | V | posteroseptal → PST, PST/OSC | posterolateral baja → IP/IPL |
-| VI | posterior → DP/DPL | posteroseptal / posterior → PSM o IP/IPL *(provisorio)* |
-| VII | posterior → DP/DPL | posteroseptal / posterior → PSM o IP/IPL *(provisorio)* |
+| VI | posterior → DP/DPL | posterior y posteroseptal → PSM o IP/IPL *(provisorio)* |
+| VII | posterior → DP/DPL | posterior y posteroseptal → PSM o IP/IPL *(provisorio)* |
 | VIII | lateral posterior → DP/DPL | posteroseptal → PSM |
-| IX | lateral → DL | septal → ninguna |
+| IX | lateral anterior → DL o DA/DAL | septal → ninguna |
 | X | lateral anterior → DA/DAL | continuidad mitroaórtica → ninguna |
 | XI | anterior → DA/DAL | continuidad mitroaórtica → ninguna |
 

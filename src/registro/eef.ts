@@ -62,7 +62,7 @@ const SECTORES: Record<AnilloEEF, Record<Hora, [string, CodigoRegion[]]>> = {
     6: ['posterior', ['RP_RPL']],
     7: ['posterior', ['RP_RPL']],
     8: ['lateral posterior', ['RP_RPL']],
-    9: ['lateral', ['RL']],
+    9: ['lateral anterior', ['RL', 'RA_RAL']],
     10: ['lateral anterior', ['RA_RAL']],
     11: ['anterior', ['RA_RAL']],
   },
@@ -73,8 +73,8 @@ const SECTORES: Record<AnilloEEF, Record<Hora, [string, CodigoRegion[]]>> = {
     3: ['lateral', ['LL_LAL']],
     4: ['posterolateral alta', ['LP_LPL']],
     5: ['posterolateral baja', ['LP_LPL']],
-    6: ['posteroseptal / posterior', ['PSMA', 'LP_LPL']],
-    7: ['posteroseptal / posterior', ['PSMA', 'LP_LPL']],
+    6: ['posterior y posteroseptal', ['PSMA', 'LP_LPL']],
+    7: ['posterior y posteroseptal', ['PSMA', 'LP_LPL']],
     8: ['posteroseptal', ['PSMA']],
     9: ['septal', []],
     10: ['septal anterior (continuidad mitroaórtica)', []],
@@ -129,7 +129,7 @@ export const LEGADO_A_HORA: Record<CodigoEEFLegado, CodigoHora> = {
 
 /** Horas que abarca cada región de los algoritmos sobre su anillo. */
 const HORAS_REGION: Partial<Record<CodigoRegion, { anillo: AnilloEEF; horas: Hora[] }>> = {
-  RA_RAL: { anillo: 'TV', horas: [10, 11, 12] },
+  RA_RAL: { anillo: 'TV', horas: [9, 10, 11, 12] },
   AS_RAPS: { anillo: 'TV', horas: [1, 2] },
   MSTA: { anillo: 'TV', horas: [3, 4] },
   PSTA: { anillo: 'TV', horas: [4, 5] },

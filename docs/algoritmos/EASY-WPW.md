@@ -61,3 +61,17 @@ posteroseptal subepicárdica.
 1. **Empate** en la delta más positiva entre dos derivaciones de distinta rama (por ejemplo, II y
    aVL iguales): el diagrama no lo contempla. Propuesta: resultado indeterminado.
 2. **Transición exactamente en V3:** cuenta como "≤ V3" (sí).
+
+## Verificación con las figuras 3 y 4 del artículo
+
+Las figuras 3 y 4 de El Hamriti et al. (Europace 2023; texto libre en PMC9935024), aportadas por el
+equipo, confirman la transcripción. Muestran la región en vista OAI 60° y la derivación con la delta
+más positiva en el círculo de Cabrera:
+
+- **Izquierdas (V1 positiva):** posteroseptal → **aVL**; anterolateral → **III**; posterolateral →
+  **II** (y aVR). Ejemplo: V1 positiva, delta más positiva en II → PL.
+- **Derechas con transición ≤ V3:** posteroseptal → **aVL** o **aVR**; anteroseptal → **II** o
+  **III**. Ejemplo: V1 negativa, transición ≤ V3, delta más positiva en aVL → PS.
+
+Coincide con la implementación (`src/algoritmo/easywpw.ts`).
+
