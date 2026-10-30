@@ -31,9 +31,13 @@ Polaridad de la onda delta en **DIII**.
 | 2 | negativa | **PLE** (posterolateral izquierda) |
 | 2 | positiva | **ALE** (anterolateral izquierda) |
 
-### Paso M — Migración en precordiales (solo vías derechas)
+### Paso M — Migración (transición del QRS en precordiales, solo vías derechas)
 
-| Desde | Migra hasta V3 | Migra después de V3 |
+"Migración" es sinónimo de **transición**: la derivación precordial donde el QRS pasa a ser
+predominantemente positivo (R > S). Una transición **hasta V3** sugiere vía **septal**; en **V4 o
+después**, vía **lateral** (confirmado por el equipo de EEF).
+
+| Desde | Transición hasta V3 (septal) | Transición en V4 o después (lateral) |
 |---|---|---|
 | Posterior | **PSD** (posteroseptal derecha) | **PLD** (posterolateral derecha) |
 | Anterior | **ASD** (anteroseptal derecha) | **ALD** (anterolateral derecha) |
@@ -54,8 +58,6 @@ EPM no distingue vía medioseptal (MST), derecha lateral (DL) ni posteroseptal s
 
 ## Puntos a confirmar con el equipo
 
-1. **"Migra até V3 / após V3":** se interpreta como la **transición precordial** (la derivación
-   donde R pasa a ser mayor que S) en V3 o antes, frente a después de V3. A confirmar si se refiere
-   a la transición del QRS o al cambio de polaridad de la onda delta.
+1. ~~Significado de "migra até V3 / após V3"~~ — resuelto: transición del QRS (ver paso M).
 2. **Delta isoeléctrica** (en DI, aVL o DIII): el diagrama solo contempla negativa o positiva.
    Hay que definir cómo se trata.
