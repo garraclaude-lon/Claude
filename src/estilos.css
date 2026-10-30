@@ -773,3 +773,18 @@ main { display: grid; gap: 20px; }
 .interruptor[aria-pressed="true"] .interruptor-pista { background: #30d158; }
 .interruptor[aria-pressed="true"] .interruptor-pista > span { transform: translateX(14px); }
 @media (prefers-reduced-motion: reduce) { .interruptor-pista, .interruptor-pista > span { transition: none; } }
+
+/* ---------- EASY-WPW principal y comparación con Arruda ---------- */
+.fase-algoritmo {
+  margin: 0 0 10px; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase;
+  color: var(--texto-tenue);
+}
+.fase-algoritmo strong { color: var(--primario); }
+.comparacion-algoritmos { margin-top: 18px; padding: 16px 18px; border-radius: var(--radio); background: var(--superficie-2, rgb(0 0 0 / 0.03)); }
+.comparacion-algoritmos h3 { margin-top: 0; }
+.comparacion-algoritmos .nota { margin: 10px 0 0; }
+.detalle-comparacion { margin-top: 10px; }
+.detalle-comparacion summary { cursor: pointer; color: var(--primario); font-weight: 600; font-size: 0.92rem; }
+.detalle-comparacion .panel-resultado { margin-top: 12px; box-shadow: none; }
+.aciertos-algoritmos { margin-top: 18px; overflow-x: auto; }
+.aciertos-algoritmos td, .aciertos-algoritmos th { white-space: nowrap; }

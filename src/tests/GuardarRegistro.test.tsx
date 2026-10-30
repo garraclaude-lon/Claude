@@ -101,7 +101,9 @@ describe('Registro de análisis', () => {
     await u.click(screen.getByRole('button', { name: 'Guardar en el registro' }));
     await screen.findByTestId('registro-guardado');
     const [reg] = [...guardados.values()];
-    expect(reg.eef).toEqual({ localizacion: 'LL', fuente: 'ablacion_exitosa', concordancia: 'concordante' });
+    expect(reg.eef).toEqual({ localizacion: 'LL', fuente: 'ablacion_exitosa', concordancia: 'concordante', concordancias: { arruda: 'concordante' } });
+    expect(reg.algoritmo).toBe('arruda');
+    expect(reg.predicciones.arruda?.regiones).toEqual(['LL_LAL']);
 
     await u.click(screen.getByRole('button', { name: 'Analizar otro paciente' }));
     expect(screen.getByTestId('resumen-total')).toHaveTextContent('1 con resultado de EEF');

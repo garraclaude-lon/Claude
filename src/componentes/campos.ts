@@ -71,6 +71,47 @@ export const CAMPOS: Record<CampoECG, DefCampo> = {
       { valor: 'no_evaluable', etiqueta: 'No evaluable' },
     ],
   },
+  // --- EASY-WPW
+  qrsV1: {
+    campo: 'qrsV1',
+    derivacion: 'V1',
+    etiqueta: 'Polaridad del QRS en V1',
+    pregunta: '¿Cómo es la polaridad (+ o -) del QRS en V1?',
+    ayuda: 'Polaridad predominante del complejo QRS en V1: más área por encima (positiva) o por debajo (negativa) de la línea de base; isoeléctrica si es isodifásico.',
+    opciones: [
+      { valor: 'positiva', etiqueta: 'Positiva' },
+      { valor: 'negativa', etiqueta: 'Negativa' },
+      { valor: 'isoelectrica', etiqueta: 'Isoeléctrica' },
+      { valor: 'no_evaluable', etiqueta: 'No evaluable' },
+    ],
+  },
+  transicionQRS: {
+    campo: 'transicionQRS',
+    derivacion: 'V1–V6',
+    etiqueta: 'Transición del QRS en precordiales',
+    pregunta: '¿Dónde ocurre la transición del QRS en precordiales?',
+    ayuda: 'Primera derivación precordial en la que la onda R es mayor que la S.',
+    opciones: [
+      { valor: 'hasta_v3', etiqueta: 'Hasta V3' },
+      { valor: 'v4_o_despues', etiqueta: 'V4 o después' },
+      { valor: 'no_evaluable', etiqueta: 'No evaluable' },
+    ],
+  },
+  deltaMasPositiva: {
+    campo: 'deltaMasPositiva',
+    derivacion: 'Δ+',
+    etiqueta: 'Derivación con la onda delta más positiva',
+    pregunta: '¿En qué derivación la onda Delta es más positiva?',
+    ayuda: 'Compará la onda delta en II, III, aVR y aVL y elegí la más positiva. Si la delta no se distingue bien, usá el QRS más positivo.',
+    opciones: [
+      { valor: 'ii', etiqueta: 'II' },
+      { valor: 'iii', etiqueta: 'III' },
+      { valor: 'avr', etiqueta: 'aVR' },
+      { valor: 'avl', etiqueta: 'aVL' },
+      { valor: 'empate', etiqueta: 'Empate' },
+      { valor: 'no_evaluable', etiqueta: 'No evaluable' },
+    ],
+  },
 };
 
 /** Formulario ordenado por derivación: I, II, III, aVR, aVF, V1. */

@@ -278,10 +278,11 @@ export function ModoImagen({
         propuesta={propuesta}
         imagen={{ url: imagen.url, nombre: imagen.nombre }}
         encabezado={<EncabezadoPaciente datos={paciente} onCambiar={setPaciente} />}
-        alTerminar={({ resultado, confirmadas, revisados }) => (
+        modo="easy_y_arruda"
+        alTerminar={({ resultado, confirmadas, revisados, comparacion }) => (
           <GuardarRegistro
             sesion={sesion}
-            datos={{ modo: 'imagen', paciente, criterios: confirmadas, resultado, propuesta, revisados }}
+            datos={{ modo: 'imagen', paciente, criterios: confirmadas, resultado, comparacion, propuesta, revisados }}
             paciente={paciente}
             repositorio={repositorio}
             onOtroPaciente={onSalir}

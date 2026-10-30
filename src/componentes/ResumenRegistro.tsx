@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { NOMBRES_CONCORDANCIA, type Concordancia } from '../registro/eef';
 import { NOMBRES_GRUPO, NOMBRES_SEXO, type GrupoEtario, type Sexo } from '../registro/paciente';
-import { resumir, tasaConcordancia, type RegistroGuardado, type Repositorio, type Resumen } from '../registro/registro';
-import { BuscarPorCodigo, EditorEEF, fechaCorta, nombreRegiones, pacienteCorto } from './CargarEEF';
+import { NOMBRES_ALGORITMO } from '../algoritmo/catalogo';
+import type { CodigoAlgoritmo } from '../algoritmo/tipos';
+import { prediccionesDe, resumir, tasaConcordancia, type RegistroGuardado, type Repositorio, type Resumen } from '../registro/registro';
+import { BuscarPorCodigo, EditorEEF, fechaCorta, nombreRegiones, pacienteCorto, textoPredicciones } from './CargarEEF';
 
 const ORDEN_GRUPOS: GrupoEtario[] = ['neonato', 'lactante', 'preescolar', 'escolar', 'adolescente', 'adulto'];
 const ORDEN_CONCORDANCIA: Concordancia[] = ['concordante', 'parcial', 'discordante', 'sin_prediccion', 'no_evaluable'];
@@ -52,7 +54,7 @@ export function ResumenRegistro({ repositorio }: { repositorio: Repositorio | nu
               total={resumen.total}
             />
             <Tabla
-              titulo="Región predicha"
+              titulo="Región predicha (algoritmo principal)"
               filas={Object.entries(resumen.porRegion)
                 .sort((a, b) => b[1] - a[1])
                 .map(([k, n]) => [nombreRegiones(k.split(' o ')), n])}
@@ -61,7 +63,7 @@ export function ResumenRegistro({ repositorio }: { repositorio: Repositorio | nu
             />
             {resumen.conEEF > 0 && tasa && (
               <Tabla
-                titulo="Predicción frente al EEF"
+                titulo="Algoritmo principal frente al EEF"
                 filas={ORDEN_CONCORDANCIA.filter((c) => resumen.porConcordancia[c]).map((c) => [
                   NOMBRES_CONCORDANCIA[c],
                   resumen.porConcordancia[c] ?? 0,
@@ -75,6 +77,7 @@ export function ResumenRegistro({ repositorio }: { repositorio: Repositorio | nu
               />
             )}
           </div>
+          {Object.keys(resumen.porAlgoritmo).length > 0 && <AciertosPorAlgoritmo resumen={resumen} />}
         </>
       )}
 
@@ -104,7 +107,7 @@ export function ResumenRegistro({ repositorio }: { repositorio: Repositorio | nu
                         <td className="codigo-celda">{r.codigo}</td>
                         <td className="fecha">{fechaCorta(r.creadoEn)}</td>
                         <td>{pacienteCorto(r)}</td>
-                        <td>{nombreRegiones(r.resultado?.regiones)}</td>
+                        <td>{textoPredicciones(prediccionesDe(r))}</td>
                         <td>
                           <button type="button" className="boton-texto" onClick={() => setEditando(r)}>
                             Cargar EEF
@@ -127,6 +130,55 @@ export function ResumenRegistro({ repositorio }: { repositorio: Repositorio | nu
         )}
       </div>
     </section>
+  );
+}
+
+const pct = (n: number, d: number) => (d > 0 ? `${Math.round((n / d) * 100)}%` : '—');
+
+/** Aciertos de cada algoritmo frente al EEF y comparación pareada (mismo ECG). */
+function AciertosPorAlgoritmo({ resumen }: { resumen: Resumen }) {
+  const algs = (['easy_wpw', 'arruda'] as CodigoAlgoritmo[]).filter((a) => resumen.porAlgoritmo[a]);
+  const p = resumen.pareado;
+  return (
+    <div className="aciertos-algoritmos" data-testid="aciertos-algoritmos">
+      <table className="criterios">
+        <caption>Aciertos frente al EEF, por algoritmo</caption>
+        <thead>
+          <tr>
+            <th scope="col">Algoritmo</th>
+            <th scope="col">Casos</th>
+            <th scope="col">Coincide</th>
+            <th scope="col">Una de dos</th>
+            <th scope="col">No coincide</th>
+            <th scope="col">Sin predicción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {algs.map((a) => {
+            const x = resumen.porAlgoritmo[a]!;
+            return (
+              <tr key={a}>
+                <td>{NOMBRES_ALGORITMO[a]}</td>
+                <td>{x.casos}</td>
+                <td>
+                  {x.coincide} ({pct(x.coincide, x.casos)})
+                </td>
+                <td>{x.parcial}</td>
+                <td>{x.noCoincide}</td>
+                <td>{x.sinPrediccion}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {p.casos > 0 && (
+        <p className="nota" data-testid="comparacion-pareada">
+          Mismo ECG con los dos algoritmos: {p.casos} {p.casos === 1 ? 'caso' : 'casos'}. Aciertan ambos: {p.ambos} · solo
+          EASY-WPW: {p.soloEasy} · solo Arruda: {p.soloArruda} · ninguno: {p.ninguno}.
+          {p.casos < 30 && ' Muestra chica: interpretar con cautela.'}
+        </p>
+      )}
+    </div>
   );
 }
 

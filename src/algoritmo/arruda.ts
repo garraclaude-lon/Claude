@@ -44,6 +44,9 @@ export const ENTRADA_VACIA: EntradaECG = {
   deltaAVR: null,
   rsV1: null,
   rsIII: null,
+  qrsV1: null,
+  transicionQRS: null,
+  deltaMasPositiva: null,
 };
 
 function criterio(entrada: EntradaECG, campo: CampoECG): CriterioUsado {
@@ -352,5 +355,6 @@ export function aplicarArruda(entrada: EntradaECG): ResultadoArruda {
     datosFaltantes: fin.datosFaltantes,
     versionAlgoritmo: VERSION_ALGORITMO,
     referencia: REFERENCIA_ARRUDA,
+    algoritmo: 'arruda',
   };
 }

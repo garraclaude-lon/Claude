@@ -9,18 +9,20 @@ describe('interpretarRespuestaIA', () => {
       esECG: true, calidad: 'buena',
       deltaI: 'negativa', deltaII: 'positiva', deltaAVF: 'isoelectrica', deltaV1: 'no_evaluable',
       deltaAVR: 'positiva', rsV1: 'r_mayor_s', rsIII: 'iguales',
+      qrsV1: 'negativa', transicionQRS: 'hasta_v3', deltaMasPositiva: 'avl',
       comentarios: { deltaI: '  inicio negativo  ' }, observacionGeneral: 'ok',
     });
     expect(p.valores).toEqual({
       deltaI: 'negativa', deltaII: 'positiva', deltaAVF: 'isoelectrica', deltaV1: 'no_evaluable',
       deltaAVR: 'positiva', rsV1: 'r_mayor_s', rsIII: 'iguales',
+      qrsV1: 'negativa', transicionQRS: 'hasta_v3', deltaMasPositiva: 'avl',
     });
     expect(p.comentarios.deltaI).toBe('inicio negativo');
     expect(p.calidad).toBe('buena');
   });
 
   it('descarta valores fuera de las opciones (nunca los adivina)', () => {
-    const p = interpretarRespuestaIA({ deltaI: 'Negativa', rsV1: 'r_menor_s', rsIII: 'r_menor_igual_s', deltaII: 3 });
+    const p = interpretarRespuestaIA({ deltaI: 'Negativa', rsV1: 'r_menor_s', rsIII: 'r_menor_igual_s', deltaII: 3, transicionQRS: 'V3', deltaMasPositiva: 'I' });
     expect(p.valores).toEqual(ENTRADA_VACIA);
   });
 

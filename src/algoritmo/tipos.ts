@@ -12,6 +12,12 @@ export type RelacionRSV1 = 'r_mayor_s' | 'r_menor_igual_s' | 'no_evaluable';
 /** Relación de amplitud R/S en III. */
 export type RelacionRSIII = 'r_mayor_s' | 'r_menor_s' | 'iguales' | 'no_evaluable';
 
+/** Transición del QRS en precordiales (derivación donde R pasa a ser mayor que S). */
+export type TransicionQRS = 'hasta_v3' | 'v4_o_despues' | 'no_evaluable';
+
+/** Derivación, entre II, III, aVR y aVL, con la onda delta más positiva (EASY-WPW). */
+export type DeltaMasPositiva = 'ii' | 'iii' | 'avr' | 'avl' | 'empate' | 'no_evaluable';
+
 /**
  * Datos de entrada. Cada campo puede ser `null` cuando el usuario todavía
  * no lo completó. Un `null` NUNCA se interpreta como un valor clínico.
@@ -24,6 +30,12 @@ export interface EntradaECG {
   deltaAVR: Polaridad | null;
   rsV1: RelacionRSV1 | null;
   rsIII: RelacionRSIII | null;
+  /** EASY-WPW: polaridad predominante del QRS en V1. */
+  qrsV1: Polaridad | null;
+  /** EASY-WPW (y EPM): transición del QRS en precordiales. */
+  transicionQRS: TransicionQRS | null;
+  /** EASY-WPW: derivación con la onda delta más positiva. */
+  deltaMasPositiva: DeltaMasPositiva | null;
 }
 
 export type CampoECG = keyof EntradaECG;
@@ -81,6 +93,9 @@ export interface PasoTraza {
   desenlace: DesenlacePaso;
 }
 
+/** Algoritmos implementados. */
+export type CodigoAlgoritmo = 'arruda' | 'easy_wpw';
+
 export interface ResultadoArruda {
   estado: EstadoResultado;
   /** Regiones predichas (vacío si no hay predicción; 2 si el algoritmo no discrimina). */
@@ -92,4 +107,11 @@ export interface ResultadoArruda {
   datosFaltantes: CampoECG[];
   versionAlgoritmo: string;
   referencia: string;
+  /** Algoritmo que produjo el resultado (ausente = Arruda, por compatibilidad). */
+  algoritmo?: CodigoAlgoritmo;
+  /** Nombres de los pasos del algoritmo, para el indicador de avance. */
+  nombresPasos?: string[];
 }
+
+/** Resultado de cualquier algoritmo (misma forma que el de Arruda). */
+export type ResultadoAlgoritmo = ResultadoArruda;

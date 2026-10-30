@@ -1,9 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import { aplicarArruda, ENTRADA_VACIA } from '../algoritmo/arruda';
-import { NOMBRES_CAMPOS, NOMBRES_VALORES } from '../algoritmo/catalogo';
-import type { CampoECG, EntradaECG, PasoTraza, ResultadoArruda } from '../algoritmo/tipos';
+import { NOMBRES_ALGORITMO, NOMBRES_CAMPOS, NOMBRES_VALORES } from '../algoritmo/catalogo';
+import { aplicarEasyWPW } from '../algoritmo/easywpw';
+import type { CampoECG, EntradaECG, PasoTraza, ResultadoAlgoritmo, ResultadoArruda } from '../algoritmo/tipos';
 import type { PropuestaIA } from '../ia/lectorIA';
 import { CAMPOS } from './campos';
+import { LOCALIZACIONES_EEF } from '../registro/eef';
 import { PanelResultado } from './PanelResultado';
 import { VisorECG } from './VisorECG';
 
@@ -13,8 +15,20 @@ interface Props {
   /** Texto breve sobre el paciente, arriba de las preguntas. */
   encabezado?: ReactNode;
   /** Lo que se muestra debajo del resultado (p. ej., guardar en el registro). */
-  alTerminar?: (d: { resultado: ResultadoArruda; confirmadas: EntradaECG; revisados: CampoECG[] }) => ReactNode;
+  alTerminar?: (d: {
+    resultado: ResultadoAlgoritmo;
+    confirmadas: EntradaECG;
+    revisados: CampoECG[];
+    /** Con EASY-WPW como principal: el resultado de Arruda sobre el mismo ECG. */
+    comparacion?: ResultadoArruda;
+  }) => ReactNode;
   onSalir: () => void;
+  /**
+   * 'arruda': cuestionario guiado de Arruda.
+   * 'easy_y_arruda': EASY-WPW como algoritmo principal y Arruda como comparación,
+   * sobre los mismos datos confirmados.
+   */
+  modo?: 'arruda' | 'easy_y_arruda';
 }
 
 /**
@@ -24,13 +38,20 @@ interface Props {
  * Las propuestas de la IA se muestran como sugerencia y nunca se usan sin
  * confirmación explícita.
  */
-export function Asistente({ propuesta, imagen, encabezado, alTerminar, onSalir }: Props) {
+export function Asistente({ propuesta, imagen, encabezado, alTerminar, onSalir, modo = 'arruda' }: Props) {
   const [confirmadas, setConfirmadas] = useState<EntradaECG>(ENTRADA_VACIA);
   const [historial, setHistorial] = useState<CampoECG[]>([]);
 
-  const resultado = aplicarArruda(confirmadas);
-  const pendiente: CampoECG | null =
-    resultado.estado === 'datos_insuficientes' ? resultado.datosFaltantes[0] : null;
+  const combinado = modo === 'easy_y_arruda';
+  const arruda = aplicarArruda(confirmadas);
+  const easy = combinado ? aplicarEasyWPW(confirmadas) : null;
+  const faltaDe = (r: ResultadoAlgoritmo | null) => (r && r.estado === 'datos_insuficientes' ? r.datosFaltantes[0] : null);
+  // Primero se completa el algoritmo principal; después, el de comparación.
+  const pendienteEasy = faltaDe(easy);
+  const pendiente: CampoECG | null = pendienteEasy ?? faltaDe(arruda);
+  const resultado: ResultadoAlgoritmo = easy ?? arruda;
+  /** Algoritmo al que corresponde la pregunta actual (o el principal, al terminar). */
+  const enCurso: ResultadoAlgoritmo = combinado && !pendienteEasy && pendiente ? arruda : resultado;
 
   const responder = (campo: CampoECG, valor: string) => {
     setConfirmadas((prev) => ({ ...prev, [campo]: valor }));
@@ -49,7 +70,8 @@ export function Asistente({ propuesta, imagen, encabezado, alTerminar, onSalir }
     setHistorial([]);
   };
 
-  const pasosRecorridos = resultado.ruta.filter((p) => p.desenlace === 'continua');
+  const pasosRecorridos = enCurso.ruta.filter((p) => p.desenlace === 'continua');
+  const nombreEnCurso = NOMBRES_ALGORITMO[enCurso.algoritmo ?? 'arruda'];
 
   return (
     <div className={`asistente${imagen ? ' con-imagen' : ''}`}>
@@ -71,7 +93,16 @@ export function Asistente({ propuesta, imagen, encabezado, alTerminar, onSalir }
           </div>
         )}
 
-        <Pasos ruta={resultado.ruta} terminado={!pendiente} />
+        {combinado && pendiente && (
+          <p className="fase-algoritmo" data-testid="fase-algoritmo">
+            {enCurso === arruda ? (
+              <>Comparación: <strong>{nombreEnCurso}</strong> (mismo ECG)</>
+            ) : (
+              <>Algoritmo principal: <strong>{nombreEnCurso}</strong></>
+            )}
+          </p>
+        )}
+        <Pasos ruta={enCurso.ruta} terminado={!pendiente} nombres={enCurso.nombresPasos} />
 
         {pasosRecorridos.length > 0 && (
           <ol className="recorrido-parcial" aria-label="Recorrido hasta ahora">
@@ -89,16 +120,22 @@ export function Asistente({ propuesta, imagen, encabezado, alTerminar, onSalir }
             key={pendiente}
             campo={pendiente}
             numero={historial.length + 1}
-            pasoActual={resultado.ruta[resultado.ruta.length - 1].titulo}
+            pasoActual={enCurso.ruta[enCurso.ruta.length - 1].titulo}
             sugerido={propuesta?.valores[pendiente] ?? null}
             comentario={propuesta?.comentarios[pendiente]}
             onResponder={(v) => responder(pendiente, v)}
           />
         ) : (
           <>
-            <PanelResultado resultado={resultado} desactualizado={false} onReiniciar={reiniciar} />
+            <PanelResultado
+              resultado={resultado}
+              desactualizado={false}
+              onReiniciar={reiniciar}
+              titulo={combinado ? `Resultado — ${NOMBRES_ALGORITMO.easy_wpw}` : undefined}
+            />
+            {combinado && <ComparacionArruda arruda={arruda} principal={resultado} />}
             {propuesta && <Concordancia propuesta={propuesta} confirmadas={confirmadas} campos={historial} />}
-            {alTerminar?.({ resultado, confirmadas, revisados: historial })}
+            {alTerminar?.({ resultado, confirmadas, revisados: historial, comparacion: combinado ? arruda : undefined })}
           </>
         )}
 
@@ -144,7 +181,8 @@ function Pregunta({ campo, numero, pasoActual, sugerido, comentario, onResponder
         <h2 id={idTitulo}>{def.pregunta}</h2>
       </div>
       <p className="ayuda">
-        {def.ayuda} Una onda que comienza isoeléctrica y luego se negativiza no debe marcarse como negativa.
+        {def.ayuda}
+        {/^delta(?!MasPositiva)/.test(campo) && ' Una onda que comienza isoeléctrica y luego se negativiza no debe marcarse como negativa.'}
       </p>
       {sugerido && (
         <p className="sugerencia-ia">
@@ -214,15 +252,61 @@ function Concordancia({ propuesta, confirmadas, campos }: PropsConcordancia) {
   );
 }
 
+/** Resumen del resultado de Arruda sobre el mismo ECG, con su detalle desplegable. */
+function ComparacionArruda({ arruda, principal }: { arruda: ResultadoArruda; principal: ResultadoAlgoritmo }) {
+  const regiones = (r: ResultadoAlgoritmo) => r.regiones.map((x) => x.abreviatura).join(' o ');
+  // Coinciden si señalan la misma zona: algún sitio del EEF es compatible con ambas predicciones
+  // (por ejemplo, PST y PST/OSC corresponden al sitio posteroseptal tricuspídeo).
+  const coinciden = LOCALIZACIONES_EEF.some(
+    (l) =>
+      arruda.regiones.some((a) => l.compatibles.includes(a.codigo)) &&
+      principal.regiones.some((p) => l.compatibles.includes(p.codigo)),
+  );
+  return (
+    <section className="comparacion-algoritmos" aria-labelledby="titulo-comparacion" data-testid="comparacion-arruda">
+      <h3 id="titulo-comparacion">Comparación con {NOMBRES_ALGORITMO.arruda}</h3>
+      <table className="criterios">
+        <thead>
+          <tr>
+            <th scope="col">Algoritmo</th>
+            <th scope="col">Localización</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{NOMBRES_ALGORITMO.easy_wpw} (principal)</td>
+            <td>{principal.regiones.length ? regiones(principal) : 'sin localización'}</td>
+          </tr>
+          <tr>
+            <td>{NOMBRES_ALGORITMO.arruda}</td>
+            <td>{arruda.regiones.length ? regiones(arruda) : 'sin localización'}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p className="nota">
+        {arruda.regiones.length && principal.regiones.length
+          ? coinciden
+            ? 'Los dos algoritmos señalan la misma zona.'
+            : 'Los algoritmos no coinciden. El estudio electrofisiológico dirá cuál acertó.'
+          : 'Uno de los algoritmos no dio localización.'}
+      </p>
+      <details className="detalle-comparacion">
+        <summary>Ver el recorrido de {NOMBRES_ALGORITMO.arruda}</summary>
+        <PanelResultado resultado={arruda} desactualizado={false} onReiniciar={() => {}} titulo={`Resultado — ${NOMBRES_ALGORITMO.arruda}`} sinAcciones />
+      </details>
+    </section>
+  );
+}
+
 const NOMBRES_PASOS = ['Pared libre izquierda', 'PS subepicárdica', 'Septal', 'Pared libre derecha'];
 
-/** Indicador de los 4 pasos del algoritmo: recorridos, actual, final u omitidos. */
-function Pasos({ ruta, terminado }: { ruta: PasoTraza[]; terminado: boolean }) {
+/** Indicador de los pasos del algoritmo: recorridos, actual, final u omitidos. */
+function Pasos({ ruta, terminado, nombres = NOMBRES_PASOS }: { ruta: PasoTraza[]; terminado: boolean; nombres?: string[] }) {
   const ultimo = ruta.length;
   const desenlace = ruta[ultimo - 1]?.desenlace;
   return (
     <ol className="pasos" aria-label="Pasos del algoritmo">
-      {NOMBRES_PASOS.map((nombre, i) => {
+      {nombres.map((nombre, i) => {
         const n = i + 1;
         const estado =
           n < ultimo ? 'hecho' : n === ultimo ? (!terminado ? 'actual' : desenlace === 'clasifica' ? 'final' : 'detenido') : terminado ? 'omitido' : 'futuro';

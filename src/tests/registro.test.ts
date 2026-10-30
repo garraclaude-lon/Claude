@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { aplicarArruda, ENTRADA_VACIA } from '../algoritmo/arruda';
+import { aplicarEasyWPW } from '../algoritmo/easywpw';
 import type { EntradaECG } from '../algoritmo/tipos';
 import { describirPaciente, grupoEtario, validarDatosPaciente } from '../registro/paciente';
 import { construirEEF, evaluarConcordancia, generarCodigo, LOCALIZACIONES_EEF, normalizarCodigo } from '../registro/eef';
-import { construirRegistro, obtenerRepositorioClaude, resumir, tasaConcordancia } from '../registro/registro';
+import { construirRegistro, obtenerRepositorioClaude, prediccionesDe, resumir, tasaConcordancia } from '../registro/registro';
 import { REGIONES } from '../algoritmo/catalogo';
 
 describe('grupoEtario', () => {
@@ -113,6 +114,43 @@ describe('resumir', () => {
     expect(r.porConcordancia).toEqual({ concordante: 1, discordante: 1, no_evaluable: 1 });
     expect(tasaConcordancia(r)).toEqual({ aciertos: 1, parciales: 0, comparables: 2 });
     expect(r.pendientesEEF.map((x) => x.codigo)).toEqual(['WPW-AAAAA6', 'WPW-AAAAA5']);
+  });
+
+  it('guarda las predicciones de los dos algoritmos y compara sus aciertos con el EEF', () => {
+    const p = { sexo: 'masculino' as const, edadAnios: 12, edadMeses: 0 };
+    // EASY-WPW: izquierda anterolateral; Arruda: LP/LPL (aVF negativa)
+    const criterios = e({ qrsV1: 'positiva', deltaMasPositiva: 'iii', deltaI: 'negativa', deltaAVF: 'negativa' });
+    const easy = aplicarEasyWPW(criterios);
+    const arruda = aplicarArruda(criterios);
+    const reg = (codigo: string, loc: 'LAL' | 'LP' | 'RL') => {
+      const preds = { easy_wpw: easy.regiones.map((x) => x.codigo), arruda: arruda.regiones.map((x) => x.codigo) };
+      return construirRegistro({
+        codigo, modo: 'imagen', paciente: p, criterios, resultado: easy, comparacion: arruda,
+        eef: construirEEF(preds.easy_wpw, loc, 'ablacion_exitosa', preds),
+      });
+    };
+    const a = reg('WPW-AAAAA2', 'LAL');
+    expect(a.algoritmo).toBe('easy_wpw');
+    expect(a.predicciones).toEqual({
+      easy_wpw: { estado: 'region_predicha', regiones: ['LL_LAL'], version: easy.versionAlgoritmo },
+      arruda: { estado: 'region_predicha', regiones: ['LP_LPL'], version: arruda.versionAlgoritmo },
+    });
+    expect(a.eef?.concordancias).toEqual({ easy_wpw: 'concordante', arruda: 'discordante' });
+
+    const r = resumir([a, reg('WPW-AAAAA3', 'LP'), reg('WPW-AAAAA4', 'RL')]);
+    expect(r.porAlgoritmo.easy_wpw).toEqual({ casos: 3, coincide: 1, parcial: 0, noCoincide: 2, sinPrediccion: 0 });
+    expect(r.porAlgoritmo.arruda).toEqual({ casos: 3, coincide: 1, parcial: 0, noCoincide: 2, sinPrediccion: 0 });
+    expect(r.pareado).toEqual({ casos: 3, ambos: 0, soloEasy: 1, soloArruda: 1, ninguno: 1 });
+  });
+
+  it('los registros anteriores (sin predicciones) cuentan como Arruda', () => {
+    const p = { sexo: 'femenino' as const, edadAnios: 9, edadMeses: 0 };
+    const izq = e({ deltaI: 'negativa', deltaAVF: 'positiva' });
+    const viejo: Record<string, unknown> = { ...construirRegistro({ codigo: 'WPW-AAAAA7', modo: 'guiado', paciente: p, criterios: izq, resultado: aplicarArruda(izq), eef: construirEEF(['LL_LAL'], 'LL', null) }) };
+    delete viejo.predicciones;
+    delete viejo.algoritmo;
+    expect(prediccionesDe(viejo).arruda?.regiones).toEqual(['LL_LAL']);
+    expect(resumir([viejo]).porAlgoritmo).toEqual({ arruda: { casos: 1, coincide: 1, parcial: 0, noCoincide: 0, sinPrediccion: 0 } });
   });
 
   it('fuera de claude.ai no hay repositorio', async () => {

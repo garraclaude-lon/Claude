@@ -239,7 +239,7 @@ function* todasLasEntradas(): Generator<EntradaECG> {
         for (const deltaV1 of POL)
           for (const deltaAVR of POL)
             for (const rsV1 of RSV1)
-              for (const rsIII of RSIII) yield { deltaI, deltaII, deltaAVF, deltaV1, deltaAVR, rsV1, rsIII };
+              for (const rsIII of RSIII) yield { ...ENTRADA_VACIA, deltaI, deltaII, deltaAVF, deltaV1, deltaAVR, rsV1, rsIII };
 }
 
 describe('Consistencia en todas las combinaciones de entrada', () => {

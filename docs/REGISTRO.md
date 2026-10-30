@@ -8,10 +8,11 @@ colección `analisis` de la base de datos privada de la página publicada en cla
 
 | Campo | Ejemplo | Descripción |
 |---|---|---|
-| `esquema` | `2` | Versión de este formato. |
+| `esquema` | `3` | Versión de este formato. |
 | `codigo` | `"WPW-7F3KAB"` | Código del registro (también es el id del documento). |
 | `versionApp` | `"0.3.0"` | Versión de la app que guardó el registro. |
-| `versionAlgoritmo` | `"arruda-1998-impl-0.1.0"` | Versión de las reglas usadas. |
+| `versionAlgoritmo` | `"easy-wpw-2023-impl-0.1.0"` | Versión del algoritmo principal. |
+| `algoritmo` | `"easy_wpw"` | Algoritmo principal: `easy_wpw` (Subir ECG) o `arruda` (cuestionario guiado). Ausente en registros anteriores = `arruda`. |
 | `modo` | `"imagen"` | `imagen`, `guiado` o `formulario`. |
 | `paciente.sexo` | `"femenino"` | `femenino`, `masculino` o `no_consignado`. |
 | `paciente.edadAnios` / `edadMeses` | `0` / `4` | Edad cumplida. |
@@ -19,12 +20,14 @@ colección `analisis` de la base de datos privada de la página publicada en cla
 | `paciente.grupoEtario` | `"lactante"` | Ver cortes abajo. |
 | `criterios` | `{ "deltaI": "positiva", … }` | Valores **confirmados** por el profesional. `null` = no hizo falta preguntarlo. |
 | `resultado.estado` | `"region_predicha"` | `region_predicha`, `datos_insuficientes`, `indeterminado` o `no_clasificable`. |
-| `resultado.regiones` | `["PSTA_CSOS"]` | Códigos de región (dos si el algoritmo no discrimina: `["PSTA","PSMA"]`). |
+| `resultado.regiones` | `["PSTA_CSOS"]` | Códigos de región del algoritmo principal (dos si no discrimina: `["PSTA","PSMA"]`). |
+| `predicciones` | `{ "easy_wpw": {…}, "arruda": {…} }` | Predicción de cada algoritmo calculado sobre el mismo ECG: `{ estado, regiones, version }`. En "Subir ECG" se guardan los dos (comparación pareada). |
 | `ia` | `null` o `{ valores, calidad, esECG, criteriosRevisados, coincidencias }` | Propuesta de la IA, si se usó. |
 | `eef` | `null` o `{ localizacion, fuente, concordancia }` | Resultado del estudio electrofisiológico. `null` = pendiente. |
 | `eef.localizacion` | `"LL"` | Sitio confirmado (ver tabla abajo). |
 | `eef.fuente` | `"ablacion_exitosa"` | `ablacion_exitosa`, `mapeo_sin_ablacion` o `null` (no informado). |
-| `eef.concordancia` | `"concordante"` | `concordante`, `parcial`, `discordante`, `sin_prediccion` o `no_evaluable`. |
+| `eef.concordancia` | `"concordante"` | Del algoritmo principal: `concordante`, `parcial`, `discordante`, `sin_prediccion` o `no_evaluable`. |
+| `eef.concordancias` | `{ "easy_wpw": "concordante", "arruda": "discordante" }` | Concordancia de cada algoritmo con el EEF. |
 | `creadoEn` / `actualizadoEn` | ISO 8601 | Momento del análisis (no es la fecha del ECG). |
 | `creadoPor` | id opaco | Identifica qué cuenta guardó el registro (no al paciente). |
 

@@ -91,6 +91,9 @@ export const NOMBRES_CAMPOS: Record<CampoECG, string> = {
   deltaAVR: 'Onda delta en aVR',
   rsV1: 'Relación R/S en V1',
   rsIII: 'Relación R/S en III',
+  qrsV1: 'Polaridad del QRS en V1',
+  transicionQRS: 'Transición del QRS en precordiales',
+  deltaMasPositiva: 'Derivación con la onda delta más positiva',
 };
 
 export const NOMBRES_VALORES: Record<string, string> = {
@@ -103,4 +106,23 @@ export const NOMBRES_VALORES: Record<string, string> = {
   r_menor_s: 'R < S',
   iguales: 'R = S',
   sin_dato: 'sin dato',
+  hasta_v3: 'hasta V3',
+  v4_o_despues: 'V4 o después',
+  ii: 'II',
+  iii: 'III',
+  avr: 'aVR',
+  avl: 'aVL',
+  empate: 'empate entre derivaciones',
+};
+
+export const VERSION_EASY_WPW = 'easy-wpw-2023-impl-0.1.0';
+
+export const REFERENCIA_EASY_WPW =
+  'El Hamriti M, Braun M, Molatta S, Imnadze G, Khalaph M, Lucas P, et al. EASY-WPW: a novel ' +
+  'ECG-algorithm for easy and reliable localization of manifest accessory pathways in children ' +
+  'and adults. Europace. 2023;25(2):600-9.';
+
+export const NOMBRES_ALGORITMO: Record<'arruda' | 'easy_wpw', string> = {
+  arruda: 'Arruda (1998)',
+  easy_wpw: 'EASY-WPW (2023)',
 };

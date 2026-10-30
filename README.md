@@ -8,15 +8,18 @@ criterios del ECG de superficie, aplicando de forma determinista el algoritmo de
 > revisarse contra la publicación original antes de cualquier uso asistencial
 > (ver [docs/LIMITACIONES.md](docs/LIMITACIONES.md)). No ingresar datos identificables de pacientes.
 
-## Qué hace esta versión (0.7.0)
+## Qué hace esta versión (0.8.0)
 
 Al abrir la app se elige una de dos versiones:
 
 1. **Versión simple: desde la imagen del ECG.** Se toma una foto con la cámara del celular o la
    tablet, o se sube un archivo JPG, PNG, BMP o PDF (se usa la primera página). La imagen queda en
-   pantalla con zoom y se piden **sexo y edad** del paciente. Opcionalmente, Claude propone una lectura **experimental** de cada criterio.
-   Después, la revisión guiada es obligatoria: cada dato se confirma a mano y solo los datos
-   confirmados entran al algoritmo. Al final se muestra la concordancia entre la IA y la revisión.
+   pantalla con zoom y se piden **sexo y edad** del paciente. Claude propone una lectura **experimental** de cada criterio.
+   El algoritmo principal es **EASY-WPW** (El Hamriti, Europace 2023, validado en niños y adultos):
+   se confirman la polaridad del QRS en V1, la transición del QRS y la derivación con la onda delta
+   más positiva. Después se confirman los criterios de **Arruda** sobre el mismo ECG, para comparar
+   los dos algoritmos con el estudio electrofisiológico. Solo los datos confirmados entran a los
+   algoritmos. Al final se muestran los dos resultados y la concordancia entre la IA y la revisión.
 2. **Cuestionario guiado (algoritmo de Arruda).** Pide **sexo y edad** y luego hace una pregunta por vez, en el orden del
    algoritmo, y solo pide los datos que necesita la rama. Desde ahí también se puede abrir el
    formulario completo con todos los criterios juntos.

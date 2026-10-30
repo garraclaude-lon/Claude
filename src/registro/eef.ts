@@ -6,7 +6,7 @@
  * (`compatibles`) es una propuesta de esta herramienta y DEBE revisarla el
  * equipo de electrofisiología (ver docs/LIMITACIONES.md).
  */
-import type { CodigoRegion } from '../algoritmo/tipos';
+import type { CodigoAlgoritmo, CodigoRegion } from '../algoritmo/tipos';
 
 export type CodigoEEF =
   | 'LAL' | 'LL' | 'LPL' | 'LP' | 'PSMA'
@@ -87,15 +87,25 @@ export function evaluarConcordancia(regionesPredichas: readonly string[], locali
 export interface DatosEEF {
   localizacion: CodigoEEF;
   fuente: FuenteEEF | null;
+  /** Concordancia del algoritmo principal del análisis. */
   concordancia: Concordancia;
+  /** Concordancia de cada algoritmo calculado sobre el mismo ECG. */
+  concordancias?: Partial<Record<CodigoAlgoritmo, Concordancia>>;
 }
 
 export function construirEEF(
   regionesPredichas: readonly string[],
   localizacion: CodigoEEF,
   fuente: FuenteEEF | null,
+  predicciones?: Partial<Record<CodigoAlgoritmo, readonly string[]>>,
 ): DatosEEF {
-  return { localizacion, fuente, concordancia: evaluarConcordancia(regionesPredichas, localizacion) };
+  const datos: DatosEEF = { localizacion, fuente, concordancia: evaluarConcordancia(regionesPredichas, localizacion) };
+  if (predicciones && Object.keys(predicciones).length > 0) {
+    datos.concordancias = Object.fromEntries(
+      Object.entries(predicciones).map(([alg, regs]) => [alg, evaluarConcordancia(regs ?? [], localizacion)]),
+    ) as Partial<Record<CodigoAlgoritmo, Concordancia>>;
+  }
+  return datos;
 }
 
 // --- Código de registro ------------------------------------------------------

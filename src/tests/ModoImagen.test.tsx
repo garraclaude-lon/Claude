@@ -38,7 +38,7 @@ describe('Modo imagen', () => {
   it('llama a la IA sin pedir confirmación manual', async () => {
     const u = userEvent.setup();
     const leer = vi.fn(async () => ({
-      valores: { ...ENTRADA_VACIA, deltaI: 'negativa' as const },
+      valores: { ...ENTRADA_VACIA, deltaI: 'negativa' as const, qrsV1: 'positiva' as const },
       comentarios: {},
       calidad: 'regular' as const,
       esECG: true,
@@ -53,7 +53,9 @@ describe('Modo imagen', () => {
     expect(screen.queryByText(/Lectura automática/)).not.toBeInTheDocument();
     await u.click(await screen.findByRole('button', { name: 'Localizar vía con IA' }));
     await waitFor(() => expect(leer).toHaveBeenCalledTimes(1));
-    expect(await screen.findByTestId('pregunta')).toHaveTextContent('La IA sugiere: negativa');
+    // El algoritmo principal es EASY-WPW: primero pregunta la polaridad del QRS en V1.
+    expect(await screen.findByTestId('fase-algoritmo')).toHaveTextContent('Algoritmo principal: EASY-WPW');
+    expect(screen.getByTestId('pregunta')).toHaveTextContent('La IA sugiere: positiva');
     expect(screen.getByText(/Trazado algo borroso/)).toBeInTheDocument();
   });
 

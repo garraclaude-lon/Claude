@@ -1,15 +1,34 @@
 import { useState } from 'react';
-import { REGIONES } from '../algoritmo/catalogo';
-import type { CodigoRegion } from '../algoritmo/tipos';
-import { construirEEF, normalizarCodigo, type CodigoEEF, type FuenteEEF } from '../registro/eef';
+import { NOMBRES_ALGORITMO, REGIONES } from '../algoritmo/catalogo';
+import type { CodigoAlgoritmo, CodigoRegion } from '../algoritmo/tipos';
+import { construirEEF, normalizarCodigo, type CodigoEEF, type Concordancia, type DatosEEF, type FuenteEEF } from '../registro/eef';
 import { NOMBRES_GRUPO, NOMBRES_SEXO } from '../registro/paciente';
-import { mensajeErrorRegistro, type RegistroGuardado, type Repositorio } from '../registro/registro';
+import { mensajeErrorRegistro, prediccionesDe, type Prediccion, type RegistroGuardado, type Repositorio } from '../registro/registro';
 import { DiagramaAnillos } from './DiagramaAnillos';
 import { SelectorEEF } from './SelectorEEF';
 
 export function nombreRegiones(codigos: readonly string[] | undefined): string {
   if (!codigos || codigos.length === 0) return 'Sin región';
   return codigos.map((c) => REGIONES[c as CodigoRegion]?.abreviatura ?? c).join(' o ');
+}
+
+/** Orden en que se muestran los algoritmos: el principal de "Subir ECG" primero. */
+const ORDEN_ALGORITMOS: CodigoAlgoritmo[] = ['easy_wpw', 'arruda'];
+
+/** Predicción de cada algoritmo en texto: "EASY-WPW: PST · Arruda: PST o PSM". */
+export function textoPredicciones(preds: Partial<Record<CodigoAlgoritmo, Prediccion>>): string {
+  const algs = ORDEN_ALGORITMOS.filter((a) => preds[a]);
+  if (algs.length <= 1) return nombreRegiones(algs[0] ? preds[algs[0]]!.regiones : undefined);
+  return algs.map((a) => `${NOMBRES_ALGORITMO[a].split(' ')[0]}: ${nombreRegiones(preds[a]!.regiones)}`).join(' · ');
+}
+
+/** Concordancia de cada algoritmo, para mostrar debajo del selector del EEF. */
+export function concordanciasPorAlgoritmo(eef: DatosEEF | null): { nombre: string; concordancia: Concordancia }[] | undefined {
+  if (!eef?.concordancias) return undefined;
+  return ORDEN_ALGORITMOS.filter((a) => eef.concordancias![a]).map((a) => ({
+    nombre: NOMBRES_ALGORITMO[a].split(' ')[0],
+    concordancia: eef.concordancias![a]!,
+  }));
 }
 
 export function fechaCorta(iso: string | undefined): string {
@@ -39,7 +58,9 @@ export function EditorEEF({ registro, repositorio, onCerrar }: PropsEditor) {
   const [error, setError] = useState<string | null>(null);
 
   const regiones = registro.resultado?.regiones ?? [];
-  const datosEEF = eef ? construirEEF(regiones, eef, fuente) : null;
+  const preds = prediccionesDe(registro);
+  const regionesPorAlg = Object.fromEntries(Object.entries(preds).map(([a, p]) => [a, p.regiones]));
+  const datosEEF = eef ? construirEEF(regiones, eef, fuente, registro.predicciones ? regionesPorAlg : undefined) : null;
 
   const guardar = async () => {
     setEstado('guardando');
@@ -57,7 +78,7 @@ export function EditorEEF({ registro, repositorio, onCerrar }: PropsEditor) {
     <div className="editor-eef" role="group" aria-label={`Resultado del EEF para ${registro.codigo}`}>
       <p className="editor-eef-cabecera">
         <strong>{registro.codigo}</strong> · {pacienteCorto(registro)} · analizado el {fechaCorta(registro.creadoEn)} ·
-        predicción: <strong>{nombreRegiones(regiones)}</strong>
+        predicción: <strong>{textoPredicciones(preds)}</strong>
       </p>
       <SelectorEEF
         id={`eef-${registro.codigo}`}
@@ -72,6 +93,7 @@ export function EditorEEF({ registro, repositorio, onCerrar }: PropsEditor) {
           setEstado('listo');
         }}
         concordancia={datosEEF?.concordancia ?? null}
+        porAlgoritmo={concordanciasPorAlgoritmo(datosEEF)}
         textoPendiente="Pendiente (sin resultado todavía)"
       />
       <DiagramaAnillos predichas={regiones} confirmado={eef} titulo="Predicción y sitio confirmado" />

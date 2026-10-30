@@ -15,9 +15,13 @@ interface Props {
   resultado: ResultadoArruda | null;
   desactualizado: boolean;
   onReiniciar: () => void;
+  /** Título del panel (por defecto, "Resultado"). */
+  titulo?: string;
+  /** Sin botones de 3D ni de reinicio (resultado secundario, de comparación). */
+  sinAcciones?: boolean;
 }
 
-export function PanelResultado({ resultado, desactualizado, onReiniciar }: Props) {
+export function PanelResultado({ resultado, desactualizado, onReiniciar, titulo = 'Resultado', sinAcciones = false }: Props) {
   const [ver3D, setVer3D] = useState(false);
   if (!resultado) {
     return (
@@ -35,11 +39,12 @@ export function PanelResultado({ resultado, desactualizado, onReiniciar }: Props
   return (
     <section
       className={`panel-resultado estado-${r.estado}${desactualizado ? ' desactualizado' : ''}`}
-      aria-labelledby="titulo-resultado"
+      aria-labelledby={sinAcciones ? undefined : 'titulo-resultado'}
+      aria-label={sinAcciones ? titulo : undefined}
       aria-live="polite"
-      data-testid="panel-resultado"
+      data-testid={sinAcciones ? 'panel-resultado-comparacion' : 'panel-resultado'}
     >
-      <h2 id="titulo-resultado">Resultado</h2>
+      <h2 id={sinAcciones ? undefined : 'titulo-resultado'}>{titulo}</h2>
 
       {desactualizado && (
         <p className="alerta" role="status">
@@ -77,7 +82,7 @@ export function PanelResultado({ resultado, desactualizado, onReiniciar }: Props
       <p className="mensaje">{r.mensaje}</p>
 
       {r.regiones.length > 0 && <DiagramaAnillos predichas={r.regiones.map((x) => x.codigo)} />}
-      {r.regiones.length > 0 && (
+      {r.regiones.length > 0 && !sinAcciones && (
         <button type="button" className="boton-3d" onClick={() => setVer3D(true)} disabled={desactualizado}>
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Z" />
@@ -143,9 +148,11 @@ export function PanelResultado({ resultado, desactualizado, onReiniciar }: Props
         </p>
       </div>
 
-      <button type="button" className="boton-secundario" onClick={onReiniciar}>
-        Reiniciar cálculo
-      </button>
+      {!sinAcciones && (
+        <button type="button" className="boton-secundario" onClick={onReiniciar}>
+          Reiniciar cálculo
+        </button>
+      )}
     </section>
   );
 }

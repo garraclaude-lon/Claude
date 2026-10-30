@@ -12,11 +12,12 @@ el artículo original o su figura. Las fuentes secundarias sirven de guía, no d
 | EPM 2024 | Delta en DI/aVL y DIII; R>S en V1; transición QRS | **Completo** (falta definir delta isoeléctrica) | Figura aportada por el equipo — ver `EPM.md` |
 | Iturralde 1996 | Polaridad del QRS en III, V1, V2 | **Casi completo** (patrones del resumen; falta el orden exacto y los casos mixtos) | Resumen del artículo (PubMed 8913903) |
 | Taguchi 2013 | R/S en V1, V2 y aVF | **Parcial** | Resúmenes secundarios |
-| EASY-WPW 2023 | Polaridad en V1, transición QRS, derivación con delta más positiva | **Completo** (falta definir empates) | Resumen gráfico aportado por el equipo — ver `EASY-WPW.md` |
+| EASY-WPW 2023 | Polaridad del QRS en V1, transición QRS, derivación con delta más positiva | **Implementado** — algoritmo principal de "Subir ECG" | Resumen gráfico aportado por el equipo — ver `EASY-WPW.md` |
 | Chiang 1995 | R/S en V1, delta en I, III y V1 | **Parcial** (falta el paso 2) | Estudio de validación pediátrica |
 | Fitzpatrick 1994 | Transición R/S, suma de deltas en II, III, aVF, vector delta | **Parcial** | Resúmenes secundarios |
 | d'Avila 1995 | Polaridad del QRS | **Sin datos** del árbol | — |
 | Sousa Ferro 2025 | Revisión comparativa (no es un algoritmo) | Solo cita | — |
+| SMART-WPW 2025 | Delta en V1 y V3, positividad/negatividad de la delta en miembros; 12 sitios en reloj | **Sin árbol** (97 % en 260 pacientes; 97 % frente a 62 % de Arruda en menores de 18) | Resúmenes (Heart Rhythm 2025, PubMed 40324514) |
 
 ## Iturralde 1996 — patrones (resumen del artículo, 102 pacientes adultos)
 

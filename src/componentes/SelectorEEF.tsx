@@ -16,12 +16,14 @@ interface Props {
   onCambiarFuente: (v: FuenteEEF | null) => void;
   concordancia: Concordancia | null;
   textoPendiente: string;
+  /** Si se calcularon varios algoritmos: la concordancia de cada uno (reemplaza a `concordancia`). */
+  porAlgoritmo?: { nombre: string; concordancia: Concordancia }[];
 }
 
 const GRUPOS = [...new Set(LOCALIZACIONES_EEF.map((l) => l.grupo))];
 
 /** Elegir la localización confirmada en el EEF (lista cerrada, sin texto libre). */
-export function SelectorEEF({ id, valor, fuente, onCambiar, onCambiarFuente, concordancia, textoPendiente }: Props) {
+export function SelectorEEF({ id, valor, fuente, onCambiar, onCambiarFuente, concordancia, textoPendiente, porAlgoritmo }: Props) {
   const conSitio = valor !== null && POR_CODIGO_EEF[valor].compatibles.length > 0;
   return (
     <div className="selector-eef">
@@ -68,11 +70,17 @@ export function SelectorEEF({ id, valor, fuente, onCambiar, onCambiarFuente, con
         </fieldset>
       )}
 
-      {concordancia && (
-        <p className={`concordancia-eef concordancia-${concordancia}`} data-testid="concordancia-eef">
-          Predicción de Arruda frente al EEF: <strong>{NOMBRES_CONCORDANCIA[concordancia]}</strong>
-        </p>
-      )}
+      {concordancia && porAlgoritmo && porAlgoritmo.length > 1
+        ? porAlgoritmo.map((a) => (
+            <p key={a.nombre} className={`concordancia-eef concordancia-${a.concordancia}`} data-testid="concordancia-eef">
+              Predicción de {a.nombre} frente al EEF: <strong>{NOMBRES_CONCORDANCIA[a.concordancia]}</strong>
+            </p>
+          ))
+        : concordancia && (
+            <p className={`concordancia-eef concordancia-${concordancia}`} data-testid="concordancia-eef">
+              Predicción de {porAlgoritmo?.[0]?.nombre ?? 'Arruda'} frente al EEF: <strong>{NOMBRES_CONCORDANCIA[concordancia]}</strong>
+            </p>
+          )}
     </div>
   );
 }

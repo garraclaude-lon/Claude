@@ -54,3 +54,19 @@ En pantalla las regiones se muestran con siglas en español. Los códigos intern
 | DL | Derecha lateral | RL | `RL` |
 | DP/DPL | Derecha posterior o posterolateral | RP/RPL | `RP_RPL` |
 
+## EASY-WPW (algoritmo principal de "Subir ECG")
+
+Implementado en `src/algoritmo/easywpw.ts` (versión `easy-wpw-2023-impl-0.1.0`). Transcripción y
+tabla de decisiones en [algoritmos/EASY-WPW.md](algoritmos/EASY-WPW.md). Criterios:
+
+- **Polaridad del QRS en V1** (`qrsV1`): positiva → izquierda; negativa o isoeléctrica → derecha.
+- **Transición del QRS** (`transicionQRS`, solo vías derechas): hasta V3 o en V4 o después.
+- **Derivación con la onda delta más positiva** (`deltaMasPositiva`): II, III, aVR o aVL.
+
+Decisiones propias de esta implementación (a validar con el equipo): un **empate** en la delta más
+positiva da resultado indeterminado; una transición **en V3** cuenta como "hasta V3".
+
+En "Subir ECG" se calculan EASY-WPW (principal) y Arruda (comparación) sobre los mismos datos
+confirmados. Dos predicciones "señalan la misma zona" si algún sitio del EEF es compatible con ambas
+(por ejemplo, PST y PST/OSC).
+

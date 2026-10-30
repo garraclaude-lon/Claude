@@ -9,9 +9,11 @@ import { describirPaciente, type DatosPaciente } from '../registro/paciente';
 import {
   construirRegistro,
   mensajeErrorRegistro,
+  prediccionesDeResultados,
   type DatosParaRegistro,
   type Repositorio,
 } from '../registro/registro';
+import { concordanciasPorAlgoritmo } from './CargarEEF';
 import { SelectorEEF } from './SelectorEEF';
 
 /**
@@ -59,7 +61,9 @@ export function GuardarRegistro({ sesion, datos, paciente, repositorio, onOtroPa
   };
 
   const regiones = datos.resultado.regiones.map((r) => r.codigo);
-  const datosEEF = eef ? construirEEF(regiones, eef, fuente) : null;
+  const preds = prediccionesDeResultados(datos.resultado, datos.comparacion);
+  const regionesPorAlg = Object.fromEntries(Object.entries(preds).map(([a, p]) => [a, p.regiones]));
+  const datosEEF = eef ? construirEEF(regiones, eef, fuente, regionesPorAlg) : null;
   const registro = construirRegistro({ ...datos, codigo: sesion.current.codigo, eef: datosEEF });
   const json = JSON.stringify(registro);
   const guardado = sesion.current.guardadoJson !== null;
@@ -94,6 +98,7 @@ export function GuardarRegistro({ sesion, datos, paciente, repositorio, onOtroPa
         onCambiar={setEef}
         onCambiarFuente={setFuente}
         concordancia={datosEEF?.concordancia ?? null}
+        porAlgoritmo={concordanciasPorAlgoritmo(datosEEF)}
         textoPendiente="Pendiente: cargarlo después con el código"
       />
 

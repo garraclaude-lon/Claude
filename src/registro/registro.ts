@@ -6,23 +6,33 @@
  * Fuera de claude.ai no hay repositorio y la app lo indica.
  */
 import { VERSION_ALGORITMO } from '../algoritmo/catalogo';
-import type { CampoECG, EntradaECG, ResultadoArruda } from '../algoritmo/tipos';
+import type { CampoECG, CodigoAlgoritmo, EntradaECG, ResultadoAlgoritmo } from '../algoritmo/tipos';
 import type { PropuestaIA } from '../ia/lectorIA';
-import { type Concordancia, type DatosEEF } from './eef';
+import { evaluarConcordancia, type CodigoEEF, type Concordancia, type DatosEEF } from './eef';
 import { edadTotalMeses, grupoEtario, type DatosPaciente, type GrupoEtario, type Sexo } from './paciente';
 
-export const VERSION_APP = '0.7.0';
-export const ESQUEMA_REGISTRO = 2;
+export const VERSION_APP = '0.8.0';
+export const ESQUEMA_REGISTRO = 3;
 export const COLECCION = 'analisis';
 
 export type ModoAnalisis = 'imagen' | 'guiado' | 'formulario';
+
+/** Predicción de un algoritmo, tal como se guarda. */
+export interface Prediccion {
+  estado: ResultadoAlgoritmo['estado'];
+  regiones: string[];
+  version: string;
+}
 
 export interface RegistroAnalisis {
   esquema: number;
   /** Código corto (WPW-XXXXXX) para cargar después el resultado del EEF. */
   codigo: string;
   versionApp: string;
+  /** Versión del algoritmo principal. */
   versionAlgoritmo: string;
+  /** Algoritmo principal del análisis (el que se muestra como resultado). */
+  algoritmo: CodigoAlgoritmo;
   modo: ModoAnalisis;
   paciente: {
     sexo: Sexo;
@@ -32,11 +42,14 @@ export interface RegistroAnalisis {
     grupoEtario: GrupoEtario;
   };
   criterios: EntradaECG;
+  /** Resultado del algoritmo principal. */
   resultado: {
-    estado: ResultadoArruda['estado'];
+    estado: ResultadoAlgoritmo['estado'];
     regiones: string[];
     datosFaltantes: CampoECG[];
   };
+  /** Predicción de cada algoritmo calculado sobre el mismo ECG (principal y comparación). */
+  predicciones: Partial<Record<CodigoAlgoritmo, Prediccion>>;
   ia: null | {
     valores: EntradaECG;
     calidad: PropuestaIA['calidad'];
@@ -57,10 +70,28 @@ export interface DatosParaRegistro {
   modo: ModoAnalisis;
   paciente: DatosPaciente;
   criterios: EntradaECG;
-  resultado: ResultadoArruda;
+  resultado: ResultadoAlgoritmo;
+  /** Resultado de otro algoritmo sobre los mismos datos (comparación). */
+  comparacion?: ResultadoAlgoritmo;
   propuesta?: PropuestaIA | null;
   /** Criterios que el profesional revisó (para la concordancia con la IA). */
   revisados?: CampoECG[];
+}
+
+const aPrediccion = (r: ResultadoAlgoritmo): Prediccion => ({
+  estado: r.estado,
+  regiones: r.regiones.map((x) => x.codigo),
+  version: r.versionAlgoritmo,
+});
+
+/** Predicciones por algoritmo de un resultado principal y, si hay, el de comparación. */
+export function prediccionesDeResultados(
+  principal: ResultadoAlgoritmo,
+  comparacion?: ResultadoAlgoritmo,
+): Partial<Record<CodigoAlgoritmo, Prediccion>> {
+  const p: Partial<Record<CodigoAlgoritmo, Prediccion>> = { [principal.algoritmo ?? 'arruda']: aPrediccion(principal) };
+  if (comparacion) p[comparacion.algoritmo ?? 'arruda'] = aPrediccion(comparacion);
+  return p;
 }
 
 export function construirRegistro(d: DatosParaRegistro): RegistroAnalisis {
@@ -69,7 +100,8 @@ export function construirRegistro(d: DatosParaRegistro): RegistroAnalisis {
     esquema: ESQUEMA_REGISTRO,
     codigo: d.codigo,
     versionApp: VERSION_APP,
-    versionAlgoritmo: VERSION_ALGORITMO,
+    versionAlgoritmo: d.resultado.versionAlgoritmo ?? VERSION_ALGORITMO,
+    algoritmo: d.resultado.algoritmo ?? 'arruda',
     modo: d.modo,
     paciente: {
       sexo: d.paciente.sexo,
@@ -95,8 +127,44 @@ export function construirRegistro(d: DatosParaRegistro): RegistroAnalisis {
           ).length,
         }
       : null,
+    predicciones: prediccionesDeResultados(d.resultado, d.comparacion),
     eef: d.eef ?? null,
   };
+}
+
+/**
+ * Predicciones por algoritmo de un registro guardado. Los registros anteriores
+ * (sin `predicciones`) solo tienen el resultado de Arruda.
+ */
+export function prediccionesDe(reg: Partial<RegistroAnalisis>): Partial<Record<CodigoAlgoritmo, Prediccion>> {
+  if (reg.predicciones && typeof reg.predicciones === 'object') return reg.predicciones;
+  if (!reg.resultado) return {};
+  return {
+    arruda: {
+      estado: reg.resultado.estado,
+      regiones: Array.isArray(reg.resultado.regiones) ? reg.resultado.regiones : [],
+      version: reg.versionAlgoritmo ?? VERSION_ALGORITMO,
+    },
+  };
+}
+
+/** Aciertos de un algoritmo frente al EEF. */
+export interface AciertosAlgoritmo {
+  /** Casos con EEF evaluable y con predicción guardada de este algoritmo. */
+  casos: number;
+  coincide: number;
+  parcial: number;
+  noCoincide: number;
+  sinPrediccion: number;
+}
+
+/** Casos en los que se calcularon los dos algoritmos y hay EEF evaluable (comparación pareada). */
+export interface ComparacionPareada {
+  casos: number;
+  ambos: number;
+  soloEasy: number;
+  soloArruda: number;
+  ninguno: number;
 }
 
 // --- Resumen para la pantalla de inicio -----------------------------------
@@ -112,11 +180,18 @@ export interface Resumen {
   porConcordancia: Partial<Record<Concordancia, number>>;
   /** Análisis guardados sin resultado de EEF, más recientes primero. */
   pendientesEEF: RegistroGuardado[];
+  /** Aciertos frente al EEF, por algoritmo. */
+  porAlgoritmo: Partial<Record<CodigoAlgoritmo, AciertosAlgoritmo>>;
+  pareado: ComparacionPareada;
 }
 
 /** Cuenta registros. Ignora documentos con forma inesperada. */
 export function resumir(registros: unknown[]): Resumen {
-  const r: Resumen = { total: 0, porSexo: {}, porGrupo: {}, porRegion: {}, porEstado: {}, conEEF: 0, porConcordancia: {}, pendientesEEF: [] };
+  const r: Resumen = {
+    total: 0, porSexo: {}, porGrupo: {}, porRegion: {}, porEstado: {}, conEEF: 0, porConcordancia: {}, pendientesEEF: [],
+    porAlgoritmo: {},
+    pareado: { casos: 0, ambos: 0, soloEasy: 0, soloArruda: 0, ninguno: 0 },
+  };
   const sumar = (o: Record<string, number>, k: string) => (o[k] = (o[k] ?? 0) + 1);
   for (const x of registros) {
     const reg = x as Partial<RegistroAnalisis>;
@@ -131,12 +206,36 @@ export function resumir(registros: unknown[]): Resumen {
     if (reg.eef && typeof reg.eef === 'object' && reg.eef.concordancia) {
       r.conEEF++;
       sumar(r.porConcordancia, String(reg.eef.concordancia));
+      contarPorAlgoritmo(r, prediccionesDe(reg), reg.eef.localizacion);
     } else if (typeof reg.codigo === 'string') {
       r.pendientesEEF.push(reg as RegistroGuardado);
     }
   }
   r.pendientesEEF.sort((a, b) => String(b.creadoEn ?? '').localeCompare(String(a.creadoEn ?? '')));
   return r;
+}
+
+/** Suma los aciertos de cada algoritmo y, si están los dos, la comparación pareada. */
+function contarPorAlgoritmo(r: Resumen, preds: Partial<Record<CodigoAlgoritmo, Prediccion>>, localizacion: CodigoEEF) {
+  const aciertos: Partial<Record<CodigoAlgoritmo, boolean>> = {};
+  for (const [alg, p] of Object.entries(preds) as [CodigoAlgoritmo, Prediccion][]) {
+    const c = evaluarConcordancia(p.regiones ?? [], localizacion);
+    if (c === 'no_evaluable') return; // vías múltiples o sin sitio confirmado: no se cuenta
+    const a = (r.porAlgoritmo[alg] ??= { casos: 0, coincide: 0, parcial: 0, noCoincide: 0, sinPrediccion: 0 });
+    a.casos++;
+    if (c === 'concordante') a.coincide++;
+    else if (c === 'parcial') a.parcial++;
+    else if (c === 'discordante') a.noCoincide++;
+    else a.sinPrediccion++;
+    aciertos[alg] = c === 'concordante';
+  }
+  if (aciertos.easy_wpw !== undefined && aciertos.arruda !== undefined) {
+    r.pareado.casos++;
+    if (aciertos.easy_wpw && aciertos.arruda) r.pareado.ambos++;
+    else if (aciertos.easy_wpw) r.pareado.soloEasy++;
+    else if (aciertos.arruda) r.pareado.soloArruda++;
+    else r.pareado.ninguno++;
+  }
 }
 
 /**
