@@ -12,7 +12,7 @@ el artículo original o su figura. Las fuentes secundarias sirven de guía, no d
 | EPM 2024 | Delta en DI/aVL y DIII; R>S en V1; transición QRS | **Completo** (falta definir delta isoeléctrica) | Figura aportada por el equipo — ver `EPM.md` |
 | Iturralde 1996 | Polaridad del QRS en III, V1, V2 | **Casi completo** (patrones del resumen; falta el orden exacto y los casos mixtos) | Resumen del artículo (PubMed 8913903) |
 | Taguchi 2013 | R/S en V1, V2 y aVF | **Parcial** | Resúmenes secundarios |
-| EASY-WPW 2023 | Polaridad en V1, transición QRS, derivación con delta más positiva | **Parcial** (las fuentes secundarias se contradicen) | Resúmenes; el texto completo está libre en Europace/PMC pero bloqueado en esta sesión |
+| EASY-WPW 2023 | Polaridad en V1, transición QRS, derivación con delta más positiva | **Completo** (falta definir empates) | Resumen gráfico aportado por el equipo — ver `EASY-WPW.md` |
 | Chiang 1995 | R/S en V1, delta en I, III y V1 | **Parcial** (falta el paso 2) | Estudio de validación pediátrica |
 | Fitzpatrick 1994 | Transición R/S, suma de deltas en II, III, aVF, vector delta | **Parcial** | Resúmenes secundarios |
 | d'Avila 1995 | Polaridad del QRS | **Sin datos** del árbol | — |
@@ -42,15 +42,6 @@ En niños, el algoritmo de adultos acertó 55–58 %; los autores propusieron un
   - R/S en aVF ≥ 1 → derecha anterior, lateral o anteroseptal.
 - Falta: la rama con aVF < 1 en cada caso y cómo separa medioseptal de posteroseptal.
 
-## EASY-WPW 2023 — lo confirmado
-
-- Paso 1: polaridad en V1 positiva → izquierda; negativa o isoeléctrica → derecha.
-- Vías izquierdas: 2 pasos. Vías derechas: 3 pasos (incluye transición del QRS ≤ V3).
-- Usa la derivación con la **onda delta más positiva** (o el QRS más positivo si la delta no se
-  distingue). 7 sitios en vista OAI 60°.
-- Falta: la tabla exacta de "derivación más positiva → sitio". Las fuentes secundarias encontradas
-  no coinciden entre sí; no se implementa hasta ver la figura 2 del artículo.
-
 ## Chiang 1995 — lo confirmado
 
 - Paso 1: R/S en V1 ≥ 1 → izquierda; < 1 → se evalúa la delta en I.
@@ -74,7 +65,7 @@ En niños, el algoritmo de adultos acertó 55–58 %; los autores propusieron un
 
 ## Para completar
 
-Se necesitan los diagramas de: EASY-WPW (figura 2), Taguchi, Chiang, Fitzpatrick y d'Avila.
+Se necesitan los diagramas de: Taguchi, Chiang, Fitzpatrick y d'Avila (e Iturralde para confirmar el orden).
 Los sitios con el texto completo (academic.oup.com, pmc.ncbi.nlm.nih.gov, sciencedirect.com,
 pubmed.ncbi.nlm.nih.gov) están bloqueados en esta sesión; se pueden habilitar en Network access o
 subir las figuras como imagen.
