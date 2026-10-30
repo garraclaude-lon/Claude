@@ -74,6 +74,14 @@ const SITIOS_EEF: Partial<Record<CodigoEEF, { anillo: Anillo; angulo: number }>>
   RP: { anillo: 't', angulo: 212 },
 };
 
+/** Posición del sitio confirmado: por hora del reloj (XII arriba, III hacia el septum en el
+ * tricuspídeo y hacia la pared lateral en el mitral) o, en registros viejos, por región. */
+function posicionEEF(codigo: CodigoEEF): { anillo: Anillo; angulo: number } | undefined {
+  const l = POR_CODIGO_EEF[codigo];
+  if (l?.anillo && l.hora) return { anillo: l.anillo === 'TV' ? 't' : 'm', angulo: (l.hora * 30) % 360 };
+  return SITIOS_EEF[codigo];
+}
+
 function centro(a: Anillo) {
   if (a === 't') return T;
   return { ...M, r: a === 'sc' ? RADIO_SC : M.r };
@@ -103,7 +111,7 @@ interface Props {
 
 export function DiagramaAnillos({ predichas, confirmado, titulo = 'Ubicación en los anillos AV' }: Props) {
   const activos = predichas.filter((c): c is CodigoRegion => c in SEGMENTOS);
-  const sitio = confirmado ? SITIOS_EEF[confirmado] : undefined;
+  const sitio = confirmado ? posicionEEF(confirmado) : undefined;
   const descripcion = [
     activos.length > 0
       ? `Región predicha: ${activos.map((c) => REGIONES[c].abreviatura).join(' o ')}.`

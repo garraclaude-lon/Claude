@@ -45,6 +45,11 @@ async function analizarIzquierda(u: Usuario, meses = '0') {
 }
 
 const selectorEEF = () => screen.getByLabelText('Localización confirmada en el estudio electrofisiológico');
+/** Carga el sitio con el criterio horario: anillo y hora (I–XII). */
+async function elegirSitio(u: ReturnType<typeof userEvent.setup>, anillo: 'TV' | 'MV', hora: number) {
+  await u.selectOptions(selectorEEF(), anillo);
+  await u.selectOptions(screen.getByLabelText(/^Hora en el anillo/), String(hora));
+}
 
 describe('Registro de análisis', () => {
   it('guarda con código, actualiza el mismo registro tras un cambio y muestra el resumen', async () => {
@@ -93,15 +98,22 @@ describe('Registro de análisis', () => {
     const { repo, guardados } = repositorioFalso();
     render(<App obtenerLector={async () => null} obtenerRepositorio={async () => repo} />);
     await analizarIzquierda(u);
-    await u.selectOptions(selectorEEF(), 'LP');
+    // Predicción IL/IAL (mitral I–III). Sitio en mitral V → no coincide, a 2 horas.
+    await elegirSitio(u, 'MV', 5);
     expect(screen.getByTestId('concordancia-eef')).toHaveTextContent('No coincide');
-    await u.selectOptions(selectorEEF(), 'LL');
+    expect(screen.getByTestId('concordancia-eef')).toHaveTextContent('a 2 horas del sitio');
+    // Al cambiar de hora se conserva el anillo: mitral II → coincide.
+    await u.selectOptions(screen.getByLabelText(/^Hora en el anillo/), '2');
     expect(screen.getByTestId('concordancia-eef')).toHaveTextContent('Coincide');
+    expect(screen.getByTestId('concordancia-eef')).toHaveTextContent('dentro de la región predicha');
     await u.click(screen.getByRole('radio', { name: 'Sitio de ablación exitosa' }));
     await u.click(screen.getByRole('button', { name: 'Guardar en el registro' }));
     await screen.findByTestId('registro-guardado');
     const [reg] = [...guardados.values()];
-    expect(reg.eef).toEqual({ localizacion: 'LL', fuente: 'ablacion_exitosa', concordancia: 'concordante', concordancias: { arruda: 'concordante' } });
+    expect(reg.eef).toEqual({
+      localizacion: 'MV_2', anillo: 'MV', hora: 2, fuente: 'ablacion_exitosa', concordancia: 'concordante',
+      distanciaHoras: 0, concordancias: { arruda: 'concordante' }, distancias: { arruda: 0 },
+    });
     expect(reg.algoritmo).toBe('arruda');
     expect(reg.predicciones.arruda?.regiones).toEqual(['LL_LAL']);
 
@@ -123,21 +135,23 @@ describe('Registro de análisis', () => {
 
     // Desde la lista de pendientes.
     await u.click(within(screen.getByTestId('tabla-pendientes')).getByRole('button', { name: 'Cargar EEF' }));
-    await u.selectOptions(screen.getByLabelText('Localización confirmada en el estudio electrofisiológico'), 'RL');
+    await elegirSitio(u, 'TV', 9);
     await u.click(screen.getByRole('button', { name: 'Guardar resultado del EEF' }));
     expect(await screen.findByTestId('eef-guardado')).toBeInTheDocument();
-    expect(guardados.get(codigo)?.eef).toMatchObject({ localizacion: 'RL', concordancia: 'discordante' });
+    // Otro anillo: no coincide y no se mide la distancia en horas.
+    expect(guardados.get(codigo)?.eef).toMatchObject({ localizacion: 'TV_9', anillo: 'TV', hora: 9, concordancia: 'discordante', distanciaHoras: null });
     await u.click(screen.getByRole('button', { name: 'Cerrar' }));
 
     // Corregirlo buscando por código (en minúsculas y sin guion).
     await u.type(screen.getByLabelText('Buscar por código'), codigo.replace('WPW-', 'wpw').toLowerCase());
     await u.click(screen.getByRole('button', { name: 'Buscar' }));
     const selector = await screen.findByLabelText('Localización confirmada en el estudio electrofisiológico');
-    expect(selector).toHaveValue('RL');
-    await u.selectOptions(selector, 'LAL');
+    expect(selector).toHaveValue('TV');
+    expect(screen.getByLabelText(/^Hora en el anillo/)).toHaveValue('9');
+    await elegirSitio(u, 'MV', 1);
     await u.click(screen.getByRole('button', { name: 'Guardar resultado del EEF' }));
     await screen.findByTestId('eef-guardado');
-    expect(guardados.get(codigo)?.eef).toMatchObject({ localizacion: 'LAL', concordancia: 'concordante' });
+    expect(guardados.get(codigo)?.eef).toMatchObject({ localizacion: 'MV_1', concordancia: 'concordante' });
   });
 
   it('avisa si el código no existe o es inválido', async () => {

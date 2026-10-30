@@ -56,12 +56,13 @@ La figura colorea cada anillo según la polaridad esperada de la onda delta en *
 
 Es la regla de los algoritmos: cuanto más negativa la delta en las inferiores, más posterior la vía.
 
-## Uso previsto en la app
+## Uso en la app
 
-Cuando se carguen los informes de EEF, la localización confirmada se podrá registrar como
-**anillo + hora** (por ejemplo, "TV V" o "MV IV"). La hora se convierte a las regiones de la app con
-estas tablas, y se guarda también la hora exacta para análisis más finos (por ejemplo, error en
-horas entre la predicción y el sitio real).
+La localización confirmada en el EEF se carga como **anillo + hora** (por ejemplo, "Tricuspídeo V"
+o "Mitral IV"). La hora se convierte a las regiones de la app con estas tablas
+(`src/registro/eef.ts`) y se guarda también la hora exacta, para medir a cuántas horas del sitio
+real quedó cada algoritmo. Mientras no se confirmen los puntos de abajo, TV IV cuenta como acierto
+para MST o PST, y MV VI–VII para PSM o IP/IPL.
 
 ## Puntos a confirmar con el equipo
 

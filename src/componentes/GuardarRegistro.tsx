@@ -99,6 +99,7 @@ export function GuardarRegistro({ sesion, datos, paciente, repositorio, onOtroPa
         onCambiarFuente={setFuente}
         concordancia={datosEEF?.concordancia ?? null}
         porAlgoritmo={concordanciasPorAlgoritmo(datosEEF)}
+        horas={datosEEF?.distanciaHoras}
         textoPendiente="Pendiente: cargarlo después con el código"
       />
 

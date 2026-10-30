@@ -28,6 +28,7 @@ export function concordanciasPorAlgoritmo(eef: DatosEEF | null): { nombre: strin
   return ORDEN_ALGORITMOS.filter((a) => eef.concordancias![a]).map((a) => ({
     nombre: NOMBRES_ALGORITMO[a].split(' ')[0],
     concordancia: eef.concordancias![a]!,
+    horas: eef.distancias?.[a],
   }));
 }
 
@@ -94,6 +95,7 @@ export function EditorEEF({ registro, repositorio, onCerrar }: PropsEditor) {
         }}
         concordancia={datosEEF?.concordancia ?? null}
         porAlgoritmo={concordanciasPorAlgoritmo(datosEEF)}
+        horas={datosEEF?.distanciaHoras}
         textoPendiente="Pendiente (sin resultado todavía)"
       />
       <DiagramaAnillos predichas={regiones} confirmado={eef} titulo="Predicción y sitio confirmado" />

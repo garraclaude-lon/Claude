@@ -38,29 +38,35 @@ se confunden al copiarlos a mano (no usa 0, O, 1, I ni L). La idea es **anotarlo
 clínica**: así el registro sigue siendo anónimo en claude.ai y la relación entre código y paciente
 queda solo dentro del hospital. Con ese código se carga después el resultado del EEF.
 
-## Estudio electrofisiológico: sitios y correspondencia con Arruda
+## Estudio electrofisiológico: sitio por anillo y hora
 
-La concordancia se calcula comparando la región predicha con las regiones "compatibles" del
-sitio confirmado. **Esta tabla es una propuesta de la herramienta y la debe revisar el equipo
-de electrofisiología** (está en `src/registro/eef.ts`).
+El sitio confirmado se carga con el **criterio horario del servicio**: anillo (tricuspídeo `TV` o
+mitral `MV`) y hora I–XII en vista OAI con XII arriba (ver [RELOJ-ANILLOS.md](RELOJ-ANILLOS.md)).
+El código guardado es `TV_5`, `MV_4`, etc., junto con `eef.anillo` y `eef.hora`. Sin hora quedan
+tres situaciones: `PS_SUBEPI` (posteroseptal subepicárdica), `MULTIPLES` y `NO_LOCALIZADA`.
 
-| Código | Sitio confirmado | Regiones de Arruda que coinciden |
+| Hora | Tricuspídeo (TV) → regiones que coinciden | Mitral (MV) → regiones que coinciden |
 |---|---|---|
-| `LAL` | Anterolateral izquierda | LL/LAL |
-| `LL` | Lateral izquierda | LL/LAL |
-| `LPL` | Posterolateral izquierda | LP/LPL |
-| `LP` | Posterior izquierda | LP/LPL |
-| `PSMA` | Posteroseptal mitral (izquierda) | PSMA |
-| `AS_PH` | Anteroseptal / parahisiana | AS/RAPS |
-| `MS` | Medioseptal | MSTA |
-| `PSTA` | Posteroseptal tricuspídea (derecha) | PSTA/CSOs, PSTA |
-| `CSOS` | Región del ostium del seno coronario (endocárdica) | PSTA/CSOs |
-| `PS_SUBEPI` | Posteroseptal subepicárdica (seno coronario, vena cardíaca media o divertículo) | PS subepicárdica |
-| `RA` / `RAL` | Anterior / anterolateral derecha | RA/RAL |
-| `RL` | Lateral derecha | RL |
-| `RPL` / `RP` | Posterolateral / posterior derecha | RP/RPL |
-| `MULTIPLES` | Vías accesorias múltiples | — (no evaluable) |
-| `NO_LOCALIZADA` | No localizada / estudio no concluyente | — (no evaluable) |
+| XII | anterior → DA/DAL | continuidad mitroaórtica → ninguna |
+| I | anteroseptal → AS/PSAD | lateral → IL/IAL |
+| II | anteroseptal / parahisiana → AS/PSAD | lateral → IL/IAL |
+| III | medioseptal → MST | lateral → IL/IAL |
+| IV | medioseptal posterior → MST, PST o PST/OSC *(provisorio)* | posterolateral alta → IP/IPL |
+| V | posteroseptal → PST, PST/OSC | posterolateral baja → IP/IPL |
+| VI | posterior → DP/DPL | posteroseptal / posterior → PSM o IP/IPL *(provisorio)* |
+| VII | posterior → DP/DPL | posteroseptal / posterior → PSM o IP/IPL *(provisorio)* |
+| VIII | lateral posterior → DP/DPL | posteroseptal → PSM |
+| IX | lateral → DL | septal → ninguna |
+| X | lateral anterior → DA/DAL | continuidad mitroaórtica → ninguna |
+| XI | anterior → DA/DAL | continuidad mitroaórtica → ninguna |
+
+**Distancia en horas** (`eef.distanciaHoras`, `eef.distancias`): sobre el mismo anillo, cuántas
+horas hay entre la hora confirmada y la hora más cercana de la región predicha (0 = dentro de la
+región). Si el sitio está en el otro anillo, no se mide (`null`). El resumen muestra el error medio
+de cada algoritmo.
+
+Los registros cargados antes con la lista por región (`LL`, `PSTA`, `RL`…) se siguen evaluando
+igual; al editarlos, la app propone su hora equivalente.
 
 Cuándo se considera coincidencia:
 - **concordante:** la región predicha está entre las compatibles.
@@ -69,6 +75,7 @@ Cuándo se considera coincidencia:
 - **discordante:** hubo predicción y no coincide.
 - **sin_prediccion:** el algoritmo no dio región (indeterminado, incompleto o no clasificable).
 - **no_evaluable:** vías múltiples o sitio no localizado.
+- Un sitio en una hora que ningún algoritmo predice (por ejemplo, continuidad mitroaórtica) cuenta como **discordante**.
 
 El porcentaje de coincidencia que muestra la pantalla de inicio es
 `concordantes / (concordantes + parciales + discordantes)`.

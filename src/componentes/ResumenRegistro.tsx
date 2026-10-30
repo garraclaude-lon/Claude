@@ -151,6 +151,7 @@ function AciertosPorAlgoritmo({ resumen }: { resumen: Resumen }) {
             <th scope="col">Una de dos</th>
             <th scope="col">No coincide</th>
             <th scope="col">Sin predicción</th>
+            <th scope="col">Error medio</th>
           </tr>
         </thead>
         <tbody>
@@ -166,6 +167,9 @@ function AciertosPorAlgoritmo({ resumen }: { resumen: Resumen }) {
                 <td>{x.parcial}</td>
                 <td>{x.noCoincide}</td>
                 <td>{x.sinPrediccion}</td>
+                <td title="Distancia promedio en horas del reloj entre la región predicha y el sitio confirmado (mismo anillo)">
+                  {x.conHora > 0 ? `${(x.sumaHoras / x.conHora).toFixed(1)} h (n=${x.conHora})` : '—'}
+                </td>
               </tr>
             );
           })}

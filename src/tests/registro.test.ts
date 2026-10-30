@@ -3,7 +3,7 @@ import { aplicarArruda, ENTRADA_VACIA } from '../algoritmo/arruda';
 import { aplicarEasyWPW } from '../algoritmo/easywpw';
 import type { EntradaECG } from '../algoritmo/tipos';
 import { describirPaciente, grupoEtario, validarDatosPaciente } from '../registro/paciente';
-import { construirEEF, evaluarConcordancia, generarCodigo, LOCALIZACIONES_EEF, normalizarCodigo } from '../registro/eef';
+import { construirEEF, distanciaHoras, evaluarConcordancia, generarCodigo, LEGADO_A_HORA, LOCALIZACIONES_EEF, normalizarCodigo, POR_CODIGO_EEF } from '../registro/eef';
 import { construirRegistro, obtenerRepositorioClaude, prediccionesDe, resumir, tasaConcordancia } from '../registro/registro';
 import { REGIONES } from '../algoritmo/catalogo';
 
@@ -138,9 +138,22 @@ describe('resumir', () => {
     expect(a.eef?.concordancias).toEqual({ easy_wpw: 'concordante', arruda: 'discordante' });
 
     const r = resumir([a, reg('WPW-AAAAA3', 'LP'), reg('WPW-AAAAA4', 'RL')]);
-    expect(r.porAlgoritmo.easy_wpw).toEqual({ casos: 3, coincide: 1, parcial: 0, noCoincide: 2, sinPrediccion: 0 });
-    expect(r.porAlgoritmo.arruda).toEqual({ casos: 3, coincide: 1, parcial: 0, noCoincide: 2, sinPrediccion: 0 });
+    expect(r.porAlgoritmo.easy_wpw).toEqual({ casos: 3, coincide: 1, parcial: 0, noCoincide: 2, sinPrediccion: 0, conHora: 0, sumaHoras: 0 });
+    expect(r.porAlgoritmo.arruda).toEqual({ casos: 3, coincide: 1, parcial: 0, noCoincide: 2, sinPrediccion: 0, conHora: 0, sumaHoras: 0 });
     expect(r.pareado).toEqual({ casos: 3, ambos: 0, soloEasy: 1, soloArruda: 1, ninguno: 1 });
+  });
+
+  it('acumula el error en horas por algoritmo', () => {
+    const p = { sexo: 'femenino' as const, edadAnios: 6, edadMeses: 0 };
+    const criterios = e({ qrsV1: 'positiva', deltaMasPositiva: 'iii', deltaI: 'negativa', deltaAVF: 'negativa' });
+    const easy = aplicarEasyWPW(criterios); // IL/IAL (mitral I–III)
+    const arruda = aplicarArruda(criterios); // IP/IPL (mitral IV–VII)
+    const preds = { easy_wpw: ['LL_LAL'], arruda: ['LP_LPL'] };
+    const reg = (codigo: string, sitio: 'MV_2' | 'MV_6') =>
+      construirRegistro({ codigo, modo: 'imagen', paciente: p, criterios, resultado: easy, comparacion: arruda, eef: construirEEF(['LL_LAL'], sitio, null, preds) });
+    const r = resumir([reg('WPW-AAAAB2', 'MV_2'), reg('WPW-AAAAB3', 'MV_6')]);
+    expect(r.porAlgoritmo.easy_wpw).toMatchObject({ conHora: 2, sumaHoras: 0 + 3 });
+    expect(r.porAlgoritmo.arruda).toMatchObject({ conHora: 2, sumaHoras: 2 + 0 });
   });
 
   it('los registros anteriores (sin predicciones) cuentan como Arruda', () => {
@@ -150,7 +163,7 @@ describe('resumir', () => {
     delete viejo.predicciones;
     delete viejo.algoritmo;
     expect(prediccionesDe(viejo).arruda?.regiones).toEqual(['LL_LAL']);
-    expect(resumir([viejo]).porAlgoritmo).toEqual({ arruda: { casos: 1, coincide: 1, parcial: 0, noCoincide: 0, sinPrediccion: 0 } });
+    expect(resumir([viejo]).porAlgoritmo).toEqual({ arruda: { casos: 1, coincide: 1, parcial: 0, noCoincide: 0, sinPrediccion: 0, conHora: 0, sumaHoras: 0 } });
   });
 
   it('fuera de claude.ai no hay repositorio', async () => {
@@ -186,6 +199,59 @@ describe('Estudio electrofisiológico', () => {
   it('cada región de Arruda tiene al menos un sitio de EEF que coincide', () => {
     const cubiertas = new Set(LOCALIZACIONES_EEF.flatMap((l) => l.compatibles));
     for (const codigo of Object.keys(REGIONES)) expect(cubiertas.has(codigo as never)).toBe(true);
+  });
+
+  it('criterio horario: cada hora de cada anillo es un sitio cargable', () => {
+    const horas = LOCALIZACIONES_EEF.filter((l) => l.anillo);
+    expect(horas).toHaveLength(24);
+    expect(POR_CODIGO_EEF.TV_5.nombre).toBe('Tricuspídeo V (posteroseptal)');
+    expect(POR_CODIGO_EEF.MV_4.nombre).toBe('Mitral IV (posterolateral alta)');
+  });
+
+  it.each([
+    [['PSTA'], 'TV_5', 'concordante'],
+    [['PSTA_CSOS'], 'TV_4', 'concordante'], // TV IV: medioseptal posterior (provisorio: MST o PST)
+    [['MSTA'], 'TV_4', 'concordante'],
+    [['AS_RAPS'], 'TV_2', 'concordante'],
+    [['RA_RAL'], 'TV_11', 'concordante'],
+    [['RL'], 'TV_9', 'concordante'],
+    [['RP_RPL'], 'TV_8', 'concordante'],
+    [['LL_LAL'], 'MV_3', 'concordante'],
+    [['LP_LPL'], 'MV_5', 'concordante'],
+    [['PSMA'], 'MV_7', 'concordante'], // MV VI–VII: posteroseptal / posterior
+    [['LP_LPL'], 'MV_7', 'concordante'],
+    [['PSMA'], 'MV_4', 'discordante'],
+    [['LL_LAL'], 'MV_11', 'discordante'], // continuidad mitroaórtica: ningún algoritmo la predice
+    [['PSTA'], 'MV_8', 'discordante'],
+    [['PS_SUBEPI'], 'PS_SUBEPI', 'concordante'],
+  ] as const)('predicción %j frente a %s → %s', (pred, eef, esperado) => {
+    expect(evaluarConcordancia(pred, eef)).toBe(esperado);
+  });
+
+  it('mide la distancia en horas sobre el mismo anillo', () => {
+    expect(distanciaHoras(['LL_LAL'], 'MV_2')).toBe(0);
+    expect(distanciaHoras(['LL_LAL'], 'MV_5')).toBe(2);
+    expect(distanciaHoras(['RA_RAL'], 'TV_2')).toBe(2); // por XII, pasando por I
+    expect(distanciaHoras(['PSTA', 'PSMA'], 'TV_6')).toBe(1); // dos opciones: la más cercana
+    expect(distanciaHoras(['LL_LAL'], 'TV_3')).toBeNull(); // otro anillo
+    expect(distanciaHoras(['PS_SUBEPI'], 'TV_5')).toBeNull(); // región sin horas
+    expect(distanciaHoras(['LL_LAL'], 'LL')).toBeNull(); // código anterior, sin hora
+  });
+
+  it('los códigos anteriores tienen una hora equivalente y siguen evaluándose igual', () => {
+    for (const [viejo, hora] of Object.entries(LEGADO_A_HORA)) {
+      const v = POR_CODIGO_EEF[viejo as keyof typeof LEGADO_A_HORA];
+      const h = POR_CODIGO_EEF[hora];
+      // La hora equivalente coincide con al menos una de las regiones del código anterior.
+      expect(v.compatibles.some((r) => h.compatibles.includes(r))).toBe(true);
+    }
+  });
+
+  it('construirEEF guarda anillo, hora y distancia', () => {
+    expect(construirEEF(['LL_LAL'], 'MV_5', null, { easy_wpw: ['LP_LPL'], arruda: ['LL_LAL'] })).toEqual({
+      localizacion: 'MV_5', anillo: 'MV', hora: 5, fuente: null, concordancia: 'discordante', distanciaHoras: 2,
+      concordancias: { easy_wpw: 'concordante', arruda: 'discordante' }, distancias: { easy_wpw: 0, arruda: 2 },
+    });
   });
 
   it('genera códigos válidos y los normaliza', () => {

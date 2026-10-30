@@ -8,7 +8,7 @@
 import { VERSION_ALGORITMO } from '../algoritmo/catalogo';
 import type { CampoECG, CodigoAlgoritmo, EntradaECG, ResultadoAlgoritmo } from '../algoritmo/tipos';
 import type { PropuestaIA } from '../ia/lectorIA';
-import { evaluarConcordancia, type CodigoEEF, type Concordancia, type DatosEEF } from './eef';
+import { distanciaHoras, evaluarConcordancia, type CodigoEEF, type Concordancia, type DatosEEF } from './eef';
 import { edadTotalMeses, grupoEtario, type DatosPaciente, type GrupoEtario, type Sexo } from './paciente';
 
 export const VERSION_APP = '0.8.0';
@@ -156,6 +156,10 @@ export interface AciertosAlgoritmo {
   parcial: number;
   noCoincide: number;
   sinPrediccion: number;
+  /** Casos con sitio cargado por hora y predicción sobre el mismo anillo. */
+  conHora: number;
+  /** Suma de las distancias en horas (para el error medio). */
+  sumaHoras: number;
 }
 
 /** Casos en los que se calcularon los dos algoritmos y hay EEF evaluable (comparación pareada). */
@@ -221,7 +225,12 @@ function contarPorAlgoritmo(r: Resumen, preds: Partial<Record<CodigoAlgoritmo, P
   for (const [alg, p] of Object.entries(preds) as [CodigoAlgoritmo, Prediccion][]) {
     const c = evaluarConcordancia(p.regiones ?? [], localizacion);
     if (c === 'no_evaluable') return; // vías múltiples o sin sitio confirmado: no se cuenta
-    const a = (r.porAlgoritmo[alg] ??= { casos: 0, coincide: 0, parcial: 0, noCoincide: 0, sinPrediccion: 0 });
+    const a = (r.porAlgoritmo[alg] ??= { casos: 0, coincide: 0, parcial: 0, noCoincide: 0, sinPrediccion: 0, conHora: 0, sumaHoras: 0 });
+    const h = distanciaHoras(p.regiones ?? [], localizacion);
+    if (h !== null) {
+      a.conHora++;
+      a.sumaHoras += h;
+    }
     a.casos++;
     if (c === 'concordante') a.coincide++;
     else if (c === 'parcial') a.parcial++;
