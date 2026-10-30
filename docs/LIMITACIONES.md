@@ -27,8 +27,11 @@
    ostium del seno coronario y la valva septal tricuspídea; el His hacia la cresta del septum.
    La rama derecha baja por la cara derecha del septum y cruza por la banda moderadora hasta el
    papilar anterior del VD. La rama izquierda es un tronco corto que se divide en la hemirrama
-   anterior (hacia el papilar anterolateral) y la posterior (hacia el posteromedial); de los
-   extremos sale la red de Purkinje. Son ilustrativos, no anatómicamente exactos.
+   anterior (hacia el papilar anterolateral) y la posterior (hacia el posteromedial), con fibras
+   septales intermedias en abanico. La red de Purkinje se genera como árboles ramificados que
+   crecen sobre el endocardio desde los haces (con semilla fija, siempre igual). El estilo visual
+   (tono neutro, interior rojizo, conducción amarilla pálida) se tomó de imágenes de referencia
+   aportadas por el equipo, usadas solo como guía. Son ilustrativos, no anatómicamente exactos.
    No se encontró un modelo abierto de las ramas y hemirramas con licencia compatible
    (el de Leiden-Delft-Groningen es CC BY-NC-SA), por eso se trazan por cálculo.
 3. **Válvulas AV y papilares esquemáticos.** La tricúspide (valvas septal, anterior y posterior) y

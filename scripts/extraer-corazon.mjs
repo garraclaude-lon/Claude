@@ -410,22 +410,87 @@ trayectos.hemirrama_anterior = fasciculo(papilarVIAnterolateral);
 trayectos.hemirrama_posterior = fasciculo(papilarVIPosteromedial);
 
 // Purkinje: se abre desde el final de cada fascículo y de la rama derecha por las paredes
+// Red de Purkinje: árboles ramificados que crecen sobre el endocardio desde el final de
+// cada fascículo y de la rama derecha (semilla fija: el resultado es reproducible).
 const purkinje = [];
-const ramificar = (inicio, superficie, punta, prefijo) => {
-  const radial = V.norm(V.sub(inicio, sobreEje(inicio)));
-  const circ = V.norm(V.cross(ejeLargo, radial));
-  const haciaPunta = V.norm(V.sub(punta, inicio));
-  const dirs = [haciaPunta, V.norm(V.add(circ, V.mul(haciaPunta, 0.4))), V.norm(V.add(V.mul(circ, -1), V.mul(haciaPunta, 0.4)))];
-  dirs.forEach((d, i) => {
-    const nombre = `${prefijo}_${i}`;
-    trayectos[nombre] = trayecto([inicio, V.add(inicio, V.mul(d, 1.6)), V.add(inicio, V.mul(d, 3.0))], superficie, 10);
-    trayectos[nombre][0] = inicio;
-    purkinje.push(nombre);
+let semilla = 20251029;
+const azar = () => ((semilla = (semilla * 1664525 + 1013904223) % 4294967296) / 4294967296);
+const gVI = rejilla(supVI, 0.6);
+const gVD = rejilla(supVD, 0.6);
+const centroVD = centroDe('ventriculo_derecho');
+const tangente = (d, n) => V.norm(V.sub(d, V.mul(n, V.dot(d, n))));
+const RADIOS_PK = [0.045, 0.034, 0.026, 0.02];
+function arbolPurkinje(inicio, dir, largo, nivel, izquierdo, prefijo, contador) {
+  const g = izquierdo ? gVI : gVD;
+  const normal = (p) => (izquierdo ? V.norm(radial(p)) : V.norm(V.sub(p, centroVD)));
+  const punta = izquierdo ? puntaVI : puntaVD;
+  const pasos = 5;
+  const pts = [inicio];
+  let p = inicio;
+  let d = tangente(dir, normal(inicio));
+  for (let i = 0; i < pasos; i++) {
+    const ruido = [azar() - 0.5, azar() - 0.5, azar() - 0.5];
+    d = tangente(V.add(d, V.mul(ruido, 0.3)), normal(p));
+    const q0 = V.add(p, V.mul(d, largo / pasos));
+    // Se pega a la pared solo en la dirección normal: así la fibra avanza sobre la superficie.
+    const v = g.cercano(q0, 0.8);
+    if (!v) break; // sin pared cerca (borde o punta): la fibra termina acá
+    const n = normal(q0);
+    const q = V.add(q0, V.mul(n, V.dot(V.sub(v, q0), n)));
+    d = V.norm(V.sub(q, p));
+    pts.push(q);
+    p = q;
+  }
+  if (pts.length < 3) return;
+  const nombre = `${prefijo}_n${nivel}_${contador.n++}`;
+  trayectos[nombre] = pts;
+  purkinje.push(nombre);
+  if (nivel >= 3) return;
+  const hijos = nivel === 0 ? 3 : 2;
+  for (let h = 0; h < hijos; h++) {
+    const n = normal(p);
+    const giro = THREE_DEG((h - (hijos - 1) / 2) * 62 + (azar() - 0.5) * 24);
+    // Gira dentro de la pared y se inclina un poco hacia la punta
+    let nd = rotar(d, n, giro);
+    nd = V.norm(V.add(nd, V.mul(V.norm(V.sub(punta, p)), 0.1)));
+    arbolPurkinje(p, nd, largo * 0.68, nivel + 1, izquierdo, prefijo, contador);
+  }
+}
+const sembrar = (inicio, izquierdo, prefijo, largo = 2.2) => {
+  const punta = izquierdo ? puntaVI : puntaVD;
+  arbolPurkinje(inicio, V.norm(V.sub(punta, inicio)), largo, 0, izquierdo, prefijo, { n: 0 });
+};
+sembrar(papilarVIAnterolateral, true, 'purkinje_vi_ant');
+sembrar(papilarVIPosteromedial, true, 'purkinje_vi_post');
+sembrar(papilarVDAnterior, false, 'purkinje_vd', 2.0);
+// Más brotes a lo largo de cada haz, para cubrir las paredes como en los atlas
+const brotar = (haz, izquierdo, prefijo, fracciones) => {
+  const r = trayectos[haz];
+  fracciones.forEach((f, i) => {
+    const k = Math.min(r.length - 2, Math.floor(f * (r.length - 1)));
+    const p = r[k];
+    const avance = V.norm(V.sub(r[k + 1], r[k]));
+    const punta = izquierdo ? puntaVI : puntaVD;
+    const d = V.norm(V.add(avance, V.mul(V.norm(V.sub(punta, p)), 0.5)));
+    arbolPurkinje(p, d, 1.6, 1, izquierdo, `${prefijo}${i}`, { n: 0 });
   });
 };
-ramificar(papilarVIAnterolateral, supVI, puntaVI, 'purkinje_vi_ant');
-ramificar(papilarVIPosteromedial, supVI, puntaVI, 'purkinje_vi_post');
-ramificar(papilarVDAnterior, supVD, puntaVD, 'purkinje_vd');
+brotar('hemirrama_anterior', true, 'purkinje_vi_ha', [0.5, 0.8]);
+brotar('hemirrama_posterior', true, 'purkinje_vi_hp', [0.5, 0.8]);
+brotar('rama_derecha', false, 'purkinje_vd_rd', [0.45, 0.7]);
+
+// Abanico de la rama izquierda: fibras septales entre las dos hemirramas, que bajan por la
+// cara izquierda del septum y terminan en la red de Purkinje del septum medio.
+const fibrasSeptales = [];
+[0.3, 0.5, 0.7].forEach((t, i) => {
+  const destino = mezcla(mezcla(papilarVIAnterolateral, papilarVIPosteromedial, t), puntaVI, 0.35);
+  const sobreSepto = masLejos(septoVI.filter((p) => V.len(V.sub(p, destino)) < 3) .concat([destino]), V.mul(nSepto, 1));
+  const r = trayecto([division, mezcla(division, sobreSepto, 0.5), sobreSepto], [...septoVI, ...supVI], 10);
+  r[0] = division;
+  trayectos[`fibra_septal_${i}`] = r;
+  fibrasSeptales.push(`fibra_septal_${i}`);
+  arbolPurkinje(r[r.length - 1], V.norm(V.sub(puntaVI, r[r.length - 1])), 1.4, 1, true, `purkinje_vi_sep${i}`, { n: 0 });
+});
 
 // --- Orientación de las valvas AV (ángulos en el esquema de cada anillo) ------------
 const anguloEn = (a, ejesA, p) => {
@@ -454,6 +519,7 @@ const referencias = redondear({
   puntas: { vi: puntaVI, vd: puntaVD },
   trayectos,
   purkinje,
+  fibrasSeptales,
   valvas: orientacionValvas,
   papilares,
   centros: Object.fromEntries(camaras.map((c) => [c, centroDe(c)])),

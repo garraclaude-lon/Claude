@@ -108,7 +108,14 @@ const TRAMOS: Tramo[] = [
   { nombre: 'rama_izquierda', inicio: 0.2, fin: 0.215, radio: 0.15 },
   { nombre: 'hemirrama_anterior', inicio: 0.215, fin: 0.255, radio: 0.085 },
   { nombre: 'hemirrama_posterior', inicio: 0.215, fin: 0.25, radio: 0.11 },
-  ...referencias.purkinje.map((n) => ({ nombre: n, inicio: 0.255, fin: 0.32, radio: 0.05 })),
+  // Abanico de la rama izquierda sobre el septum
+  ...referencias.fibrasSeptales.map((n) => ({ nombre: n, inicio: 0.215, fin: 0.25, radio: 0.06 })),
+  // Red de Purkinje: cada nivel de ramificación se activa un poco después y es más fino
+  ...referencias.purkinje.map((n) => {
+    const nivel = Number(/_n(\d)_/.exec(n)?.[1] ?? 0);
+    const inicio = 0.25 + nivel * 0.018;
+    return { nombre: n, inicio, fin: inicio + 0.03, radio: [0.045, 0.034, 0.026, 0.02][nivel] ?? 0.02 };
+  }),
 ];
 const VIA_INICIO = 0.06;
 const VIA_FIN = 0.1;
@@ -133,67 +140,57 @@ function texturaBrillo(): THREE.Texture {
   return t;
 }
 
-function fondo(): THREE.Texture {
-  const c = document.createElement('canvas');
-  c.width = 4;
-  c.height = 256;
-  const g = c.getContext('2d')!;
-  const grad = g.createLinearGradient(0, 0, 0, 256);
-  grad.addColorStop(0, '#1a2233');
-  grad.addColorStop(0.55, '#0c1018');
-  grad.addColorStop(1, '#06080c');
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 4, 256);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
-
-/** Materiales por tipo de estructura. */
+/**
+ * Materiales por tipo de estructura. Estilo de atlas: superficies mate en un tono
+ * neutro gris‑marrón, translúcidas, y el interior de las cámaras rojizo.
+ */
 function material(grupo: string): THREE.MeshPhysicalMaterial {
   const base = {
-    roughness: 0.42,
+    roughness: 0.66,
     metalness: 0,
-    clearcoat: 0.55,
-    clearcoatRoughness: 0.35,
-    sheen: 0.35,
-    sheenRoughness: 0.5,
-    envMapIntensity: 0.55,
+    sheen: 0.18,
+    sheenRoughness: 0.7,
+    sheenColor: new THREE.Color(0xd8c4ba),
+    envMapIntensity: 0.35,
   };
-  const translucido = (color: number, opacity: number, sheenColor = 0xff9a8a) =>
-    new THREE.MeshPhysicalMaterial({
-      ...base,
-      color,
-      sheenColor: new THREE.Color(sheenColor),
-      transparent: true,
-      opacity,
-      depthWrite: false,
-      side: THREE.FrontSide,
-    });
+  const translucido = (color: number, opacity: number) =>
+    new THREE.MeshPhysicalMaterial({ ...base, color, transparent: true, opacity, depthWrite: false, side: THREE.FrontSide });
   switch (grupo) {
     case 'ventriculo':
-      return translucido(0x9e2626, 0.34);
+      return translucido(0xa8877d, 0.2);
     case 'auricula':
-      return translucido(0xb3423d, 0.3);
+      return translucido(0xae918a, 0.18);
     case 'papilar':
-      return translucido(0x9c2424, 0.45);
+      return translucido(0x8a4a42, 0.55);
     case 'valvula':
-      return new THREE.MeshPhysicalMaterial({ ...base, color: 0xf2d9c9, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
+      return new THREE.MeshPhysicalMaterial({ ...base, color: 0x9d918b, transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide });
     case 'arteria':
-      return new THREE.MeshPhysicalMaterial({ ...base, color: 0xd7262c, emissive: new THREE.Color(0x3a0507), clearcoat: 0.9 });
-    case 'aorta':
-      return translucido(0xc83c3a, 0.42);
-    case 'pulmonar':
-      return translucido(0x6f7fc4, 0.42, 0xb7c3ff);
-    case 'vena':
-      return translucido(0x4c62b3, 0.42, 0xa9b8ff);
+      return new THREE.MeshPhysicalMaterial({ ...base, color: 0xc0392f, emissive: new THREE.Color(0x2a0504) });
     case 'vena_cardiaca':
-      return new THREE.MeshPhysicalMaterial({ ...base, color: 0x5560c2, emissive: new THREE.Color(0x0b0f2a), clearcoat: 0.9 });
+      return new THREE.MeshPhysicalMaterial({ ...base, color: 0x5560b8, emissive: new THREE.Color(0x0b0f2a) });
+    case 'aorta':
+    case 'pulmonar':
+    case 'vena':
     case 'vena_pulmonar':
-      return translucido(0xc25463, 0.38);
+      // Grandes vasos: el mismo tono neutro, algo más opacos
+      return translucido(0x8f7c72, 0.62);
     default:
-      return translucido(0xb03a3a, 0.35);
+      return translucido(0x9c8278, 0.25);
   }
+}
+
+/** Interior de una cámara: se ve a través de la pared, rojizo como el miocardio. */
+function materialInterior(grupo: string): THREE.MeshPhysicalMaterial {
+  return new THREE.MeshPhysicalMaterial({
+    color: grupo === 'ventriculo' ? 0x7a352d : 0x8a4c44,
+    roughness: 0.8,
+    metalness: 0,
+    envMapIntensity: 0.25,
+    transparent: true,
+    opacity: grupo === 'ventriculo' ? 0.42 : 0.3,
+    depthWrite: false,
+    side: THREE.BackSide,
+  });
 }
 
 // --- Escena --------------------------------------------------------------------
@@ -226,8 +223,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
   contenedor.appendChild(capaGuia);
 
   const escena = new THREE.Scene();
-  const texFondo = fondo();
-  escena.background = texFondo;
+  escena.background = new THREE.Color(0x000000);
   const pmrem = new THREE.PMREMGenerator(renderer);
   const ambiente = new RoomEnvironment(renderer);
   const envMap = pmrem.fromScene(ambiente, 0.04).texture;
@@ -241,7 +237,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
   luzContra.position.set(-35, 10, -40);
   escena.add(luzClave, luzContra, new THREE.HemisphereLight(0xffeedd, 0x220a0a, 0.35));
 
-  const desechables: { dispose(): void }[] = [texFondo, envMap, pmrem];
+  const desechables: { dispose(): void }[] = [envMap, pmrem];
   const registrar = <T extends { dispose(): void }>(o: T) => (desechables.push(o), o);
   const brillo = registrar(texturaBrillo());
 
@@ -276,31 +272,50 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
       m.visible = false; // apagados por defecto
     }
     registrar(m.geometry);
-    (DESTINO[grupo] ?? fijos).add(m);
+    const destinoMalla = DESTINO[grupo] ?? fijos;
+    destinoMalla.add(m);
+    if (grupo === 'ventriculo' || grupo === 'auricula') {
+      const interior = new THREE.Mesh(m.geometry, registrar(materialInterior(grupo)));
+      interior.position.copy(m.position);
+      interior.quaternion.copy(m.quaternion);
+      interior.scale.copy(m.scale);
+      interior.renderOrder = 0;
+      destinoMalla.add(interior);
+    }
   }
 
   // --- Sistema de conducción sobre la anatomía
-  const colorReposo = new THREE.Color(0x9b7a1c);
-  const colorActivo = new THREE.Color(0xfff6b0);
+  // Amarillo pálido mate; al pasar el impulso se aclara y brilla apenas.
+  const COLOR_CONDUCCION = 0xe2db8c;
+  const colorActivo = new THREE.Color(0xfff3a0);
   const tramos = TRAMOS.map((t) => {
     const puntos = (referencias.trayectos as Record<string, number[][]>)[t.nombre].map(v3);
     const curva = new THREE.CatmullRomCurve3(puntos);
-    const mat = registrar(new THREE.MeshStandardMaterial({ color: 0x5e4a12, emissive: colorReposo.clone(), emissiveIntensity: 0.6, roughness: 0.4 }));
-    const tubo = new THREE.Mesh(registrar(new THREE.TubeGeometry(curva, 64, t.radio, 10, false)), mat);
-    const chispa = new THREE.Sprite(
-      registrar(new THREE.SpriteMaterial({ map: brillo, color: 0xffe07a, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true })),
-    );
-    chispa.scale.setScalar(0.75);
+    const fino = t.nombre.startsWith('purkinje');
+    const mat = registrar(new THREE.MeshStandardMaterial({ color: COLOR_CONDUCCION, emissive: colorActivo, emissiveIntensity: 0.04, roughness: 0.55, envMapIntensity: 0.4 }));
+    const tubo = new THREE.Mesh(registrar(new THREE.TubeGeometry(curva, fino ? 20 : 64, t.radio, fino ? 6 : 10, false)), mat);
     // Los tramos ventriculares se mueven con los ventrículos; los auriculares con las aurículas.
     const destino = t.inicio >= 0.17 ? ventriculos : auriculas;
-    destino.add(tubo, chispa);
+    destino.add(tubo);
+    // Una chispa recorre los haces principales (en la red de Purkinje solo se aclaran las fibras).
+    let chispa: THREE.Sprite | null = null;
+    if (!fino) {
+      chispa = new THREE.Sprite(
+        registrar(new THREE.SpriteMaterial({ map: brillo, color: 0xfff1a8, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true })),
+      );
+      chispa.scale.setScalar(0.6);
+      destino.add(chispa);
+    }
     return { ...t, curva, mat, chispa };
   });
 
-  const nodo = (pos: Vec, radio: number, destino: THREE.Group) => {
-    const mat = registrar(new THREE.MeshStandardMaterial({ color: 0x5e4a12, emissive: colorReposo.clone(), emissiveIntensity: 1 }));
-    const m = new THREE.Mesh(registrar(new THREE.SphereGeometry(radio, 24, 16)), mat);
+  // Nódulos con forma propia: sinusal en bulbo, AV en huso (alargados según su eje).
+  const nodo = (pos: Vec, radio: number, destino: THREE.Group, eje: THREE.Vector3, alargue: number) => {
+    const mat = registrar(new THREE.MeshStandardMaterial({ color: COLOR_CONDUCCION, emissive: colorActivo, emissiveIntensity: 0.05, roughness: 0.5 }));
+    const m = new THREE.Mesh(registrar(new THREE.SphereGeometry(radio, 28, 18)), mat);
     m.position.copy(v3(pos));
+    m.scale.set(1, alargue, 1);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), eje.clone().normalize());
     const halo = new THREE.Sprite(
       registrar(new THREE.SpriteMaterial({ map: brillo, color: 0xffcf4a, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, transparent: true, opacity: 0 })),
     );
@@ -309,8 +324,9 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
     destino.add(m);
     return { mat, halo };
   };
-  const nodoSA = nodo(referencias.nodos.sinusal as Vec, 0.32, auriculas);
-  const nodoAV = nodo(referencias.nodos.auriculoventricular as Vec, 0.28, auriculas);
+  const his = (referencias.trayectos as Record<string, number[][]>).his.map(v3);
+  const nodoSA = nodo(referencias.nodos.sinusal as Vec, 0.34, auriculas, new THREE.Vector3(0.15, 1, 0.1), 1.9);
+  const nodoAV = nodo(referencias.nodos.auriculoventricular as Vec, 0.26, auriculas, his[1].clone().sub(his[0]), 2.1);
 
   // --- Válvulas AV minimalistas, papilares y cuerdas tendinosas (esquemáticos)
   // Aparato valvular (válvulas, papilares, cuerdas y anillos): oculto hasta prender las referencias.
@@ -518,7 +534,7 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
   rotular('Rama izquierda', medioDe('rama_izquierda').add(new THREE.Vector3(1.2, 0.5, 0.4)), etConduccion);
   rotular('Hemirrama anterior', medioDe('hemirrama_anterior').add(new THREE.Vector3(1.4, 0.4, 0.6)), etConduccion);
   rotular('Hemirrama posterior', medioDe('hemirrama_posterior').add(new THREE.Vector3(1.3, -1.7, 0.6)), etConduccion);
-  rotular('Purkinje', medioDe('purkinje_vi_ant_0').add(new THREE.Vector3(1.2, -0.3, 0)), etConduccion);
+  rotular('Purkinje', medioDe('purkinje_vi_ant_n0_0').add(new THREE.Vector3(1.2, -0.3, 0)), etConduccion);
   rotular('Tricúspide', puntoAnillo('tricuspide', 270, 1.2), etAnatomia);
   rotular('Mitral', puntoAnillo('mitral', 120, 1.4), etAnatomia);
 
@@ -710,21 +726,20 @@ export async function crearEscena(contenedor: HTMLElement, opciones: OpcionesEsc
 
     // Nódulos
     const sa = pulso(t, 0, 0.03, 0.12);
-    nodoSA.mat.emissive.copy(colorReposo).lerp(colorActivo, sa);
-    nodoSA.mat.emissiveIntensity = 0.6 + sa * 1.0;
+    nodoSA.mat.emissiveIntensity = 0.05 + sa * 0.8;
     nodoSA.halo.material.opacity = sa * 0.45;
     const av = t >= 0.09 && t <= 0.17 ? 0.55 + 0.45 * Math.sin(((t - 0.09) / 0.08) * Math.PI) : 0;
-    nodoAV.mat.emissive.copy(colorReposo).lerp(colorActivo, av);
-    nodoAV.mat.emissiveIntensity = 0.6 + av * 0.9;
+    nodoAV.mat.emissiveIntensity = 0.05 + av * 0.7;
     nodoAV.halo.material.opacity = av * 0.4;
 
     for (const tr of tramos) {
       const a = pulso(t, tr.inicio, tr.fin, 0.12);
-      tr.mat.emissive.copy(colorReposo).lerp(colorActivo, a);
-      tr.mat.emissiveIntensity = 0.5 + a * 0.9;
-      const visible = t >= tr.inicio && t <= tr.fin + 0.015;
-      tr.chispa.visible = visible;
-      if (visible) tr.chispa.position.copy(tr.curva.getPointAt(ventana(t, tr.inicio, tr.fin)));
+      tr.mat.emissiveIntensity = 0.04 + a * 0.7;
+      if (tr.chispa) {
+        const visible = t >= tr.inicio && t <= tr.fin + 0.015;
+        tr.chispa.visible = visible;
+        if (visible) tr.chispa.position.copy(tr.curva.getPointAt(ventana(t, tr.inicio, tr.fin)));
+      }
     }
 
     for (const l of leds) {

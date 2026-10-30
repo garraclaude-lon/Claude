@@ -722,7 +722,7 @@ main { display: grid; gap: 20px; }
 .boton-cerrar:hover { background: rgb(255 255 255 / 0.18); }
 .modal-3d-lienzo {
   position: relative; min-height: 0; overflow: hidden; border-radius: 18px; touch-action: none;
-  background: radial-gradient(80% 70% at 50% 40%, #1b2233 0%, #0b0d12 75%);
+  background: #000;
 }
 .modal-3d-lienzo canvas { display: block; width: 100%; height: 100%; cursor: grab; }
 .modal-3d-lienzo canvas:active { cursor: grabbing; }
