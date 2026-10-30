@@ -107,15 +107,27 @@ interface Props {
   predichas: readonly string[];
   confirmado?: CodigoEEF | null;
   titulo?: string;
+  /** Sector horario predicho: se dibuja por horas exactas en lugar de la región. */
+  sector?: { anillo: 'TV' | 'MV'; horas: readonly number[] } | null;
 }
 
-export function DiagramaAnillos({ predichas, confirmado, titulo = 'Ubicación en los anillos AV' }: Props) {
-  const activos = predichas.filter((c): c is CodigoRegion => c in SEGMENTOS);
+/** Arco de un sector horario (cada hora ocupa ±15° alrededor de hora × 30°). */
+function segmentoSector(s: { anillo: 'TV' | 'MV'; horas: readonly number[] }): Segmento {
+  const angulos = s.horas.map((h) => (h % 12) * 30);
+  // Sectores que cruzan las XII (p. ej., XI–XII): se toma el ángulo continuo.
+  const continuos = angulos.map((a) => (Math.max(...angulos) - a > 180 ? a + 360 : a));
+  return { anillo: s.anillo === 'TV' ? 't' : 'm', desde: Math.min(...continuos) - 15, hasta: Math.max(...continuos) + 15 };
+}
+
+export function DiagramaAnillos({ predichas, confirmado, titulo = 'Ubicación en los anillos AV', sector = null }: Props) {
+  const activos = sector ? [] : predichas.filter((c): c is CodigoRegion => c in SEGMENTOS);
   const sitio = confirmado ? posicionEEF(confirmado) : undefined;
   const descripcion = [
-    activos.length > 0
-      ? `Región predicha: ${activos.map((c) => REGIONES[c].abreviatura).join(' o ')}.`
-      : 'Sin región predicha.',
+    sector
+      ? `Sector predicho: anillo ${sector.anillo === 'TV' ? 'tricuspídeo' : 'mitral'}, ${sector.horas.join(' a ')} horas.`
+      : activos.length > 0
+        ? `Región predicha: ${activos.map((c) => REGIONES[c].abreviatura).join(' o ')}.`
+        : 'Sin región predicha.',
     confirmado ? `Sitio confirmado por EEF: ${POR_CODIGO_EEF[confirmado].nombre}.` : '',
   ].join(' ');
   // Ostium del seno coronario: entre los dos anillos, abajo.
@@ -146,6 +158,7 @@ export function DiagramaAnillos({ predichas, confirmado, titulo = 'Ubicación en
             />
           )),
         )}
+        {sector && <path d={arco(segmentoSector(sector))} className="dg-activo" strokeWidth={GROSOR} data-testid="dg-sector" />}
         {activos.includes('PSTA_CSOS') && <circle cx={ostium.x} cy={ostium.y} r="6" className="dg-ostium-activo" />}
 
         {(Object.keys(SEGMENTOS) as CodigoRegion[])

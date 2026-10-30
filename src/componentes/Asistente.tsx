@@ -2,7 +2,8 @@ import { useState, type ReactNode } from 'react';
 import { aplicarArruda, ENTRADA_VACIA } from '../algoritmo/arruda';
 import { NOMBRES_ALGORITMO, NOMBRES_CAMPOS, NOMBRES_VALORES } from '../algoritmo/catalogo';
 import { aplicarEasyWPW } from '../algoritmo/easywpw';
-import type { CampoECG, EntradaECG, PasoTraza, ResultadoAlgoritmo, ResultadoArruda } from '../algoritmo/tipos';
+import { aplicarSmartWPW, textoHorasSector } from '../algoritmo/smartwpw';
+import type { CampoECG, EntradaECG, PasoTraza, ResultadoAlgoritmo } from '../algoritmo/tipos';
 import type { PropuestaIA } from '../ia/lectorIA';
 import { CAMPOS } from './campos';
 import { LOCALIZACIONES_EEF } from '../registro/eef';
@@ -19,16 +20,16 @@ interface Props {
     resultado: ResultadoAlgoritmo;
     confirmadas: EntradaECG;
     revisados: CampoECG[];
-    /** Con EASY-WPW como principal: el resultado de Arruda sobre el mismo ECG. */
-    comparacion?: ResultadoArruda;
+    /** Resultados de los algoritmos de comparación sobre el mismo ECG. */
+    comparaciones?: ResultadoAlgoritmo[];
   }) => ReactNode;
   onSalir: () => void;
   /**
    * 'arruda': cuestionario guiado de Arruda.
-   * 'easy_y_arruda': EASY-WPW como algoritmo principal y Arruda como comparación,
-   * sobre los mismos datos confirmados.
+   * 'smart_easy_arruda': SMART-WPW como algoritmo principal y EASY-WPW y Arruda como
+   * comparación, sobre los mismos datos confirmados.
    */
-  modo?: 'arruda' | 'easy_y_arruda';
+  modo?: 'arruda' | 'smart_easy_arruda';
 }
 
 /**
@@ -42,16 +43,18 @@ export function Asistente({ propuesta, imagen, encabezado, alTerminar, onSalir, 
   const [confirmadas, setConfirmadas] = useState<EntradaECG>(ENTRADA_VACIA);
   const [historial, setHistorial] = useState<CampoECG[]>([]);
 
-  const combinado = modo === 'easy_y_arruda';
-  const arruda = aplicarArruda(confirmadas);
-  const easy = combinado ? aplicarEasyWPW(confirmadas) : null;
-  const faltaDe = (r: ResultadoAlgoritmo | null) => (r && r.estado === 'datos_insuficientes' ? r.datosFaltantes[0] : null);
-  // Primero se completa el algoritmo principal; después, el de comparación.
-  const pendienteEasy = faltaDe(easy);
-  const pendiente: CampoECG | null = pendienteEasy ?? faltaDe(arruda);
-  const resultado: ResultadoAlgoritmo = easy ?? arruda;
+  const combinado = modo === 'smart_easy_arruda';
+  // Algoritmos en el orden en que se completan: el principal primero.
+  const secuencia: ResultadoAlgoritmo[] = combinado
+    ? [aplicarSmartWPW(confirmadas), aplicarEasyWPW(confirmadas), aplicarArruda(confirmadas)]
+    : [aplicarArruda(confirmadas)];
+  const faltaDe = (r: ResultadoAlgoritmo) => (r.estado === 'datos_insuficientes' ? r.datosFaltantes[0] : null);
+  const indiceEnCurso = secuencia.findIndex((r) => faltaDe(r) !== null);
+  const pendiente: CampoECG | null = indiceEnCurso >= 0 ? faltaDe(secuencia[indiceEnCurso]) : null;
+  const resultado: ResultadoAlgoritmo = secuencia[0];
+  const comparaciones = secuencia.slice(1);
   /** Algoritmo al que corresponde la pregunta actual (o el principal, al terminar). */
-  const enCurso: ResultadoAlgoritmo = combinado && !pendienteEasy && pendiente ? arruda : resultado;
+  const enCurso: ResultadoAlgoritmo = indiceEnCurso >= 0 ? secuencia[indiceEnCurso] : resultado;
 
   const responder = (campo: CampoECG, valor: string) => {
     setConfirmadas((prev) => ({ ...prev, [campo]: valor }));
@@ -95,7 +98,7 @@ export function Asistente({ propuesta, imagen, encabezado, alTerminar, onSalir, 
 
         {combinado && pendiente && (
           <p className="fase-algoritmo" data-testid="fase-algoritmo">
-            {enCurso === arruda ? (
+            {enCurso !== resultado ? (
               <>Comparación: <strong>{nombreEnCurso}</strong> (mismo ECG)</>
             ) : (
               <>Algoritmo principal: <strong>{nombreEnCurso}</strong></>
@@ -131,11 +134,11 @@ export function Asistente({ propuesta, imagen, encabezado, alTerminar, onSalir, 
               resultado={resultado}
               desactualizado={false}
               onReiniciar={reiniciar}
-              titulo={combinado ? `Resultado — ${NOMBRES_ALGORITMO.easy_wpw}` : undefined}
+              titulo={combinado ? `Resultado — ${NOMBRES_ALGORITMO.smart_wpw}` : undefined}
             />
-            {combinado && <ComparacionArruda arruda={arruda} principal={resultado} />}
+            {combinado && <ComparacionAlgoritmos principal={resultado} comparaciones={comparaciones} />}
             {propuesta && <Concordancia propuesta={propuesta} confirmadas={confirmadas} campos={historial} />}
-            {alTerminar?.({ resultado, confirmadas, revisados: historial, comparacion: combinado ? arruda : undefined })}
+            {alTerminar?.({ resultado, confirmadas, revisados: historial, comparaciones: combinado ? comparaciones : undefined })}
           </>
         )}
 
@@ -252,48 +255,59 @@ function Concordancia({ propuesta, confirmadas, campos }: PropsConcordancia) {
   );
 }
 
-/** Resumen del resultado de Arruda sobre el mismo ECG, con su detalle desplegable. */
-function ComparacionArruda({ arruda, principal }: { arruda: ResultadoArruda; principal: ResultadoAlgoritmo }) {
-  const regiones = (r: ResultadoAlgoritmo) => r.regiones.map((x) => x.abreviatura).join(' o ');
-  // Coinciden si señalan la misma zona: algún sitio del EEF es compatible con ambas predicciones
-  // (por ejemplo, PST y PST/OSC corresponden al sitio posteroseptal tricuspídeo).
-  const coinciden = LOCALIZACIONES_EEF.some(
-    (l) =>
-      arruda.regiones.some((a) => l.compatibles.includes(a.codigo)) &&
-      principal.regiones.some((p) => l.compatibles.includes(p.codigo)),
+/** Texto de la localización de un algoritmo: sector horario si lo da, si no las regiones. */
+function localizacion(r: ResultadoAlgoritmo): string {
+  if (r.sector) return `${textoHorasSector(r.sector)} · ${r.regiones.map((x) => x.abreviatura).join(' o ')}`;
+  return r.regiones.length ? r.regiones.map((x) => x.abreviatura).join(' o ') : 'sin localización';
+}
+
+/** ¿Dos resultados señalan la misma zona? (algún sitio del EEF es compatible con ambos). */
+function mismaZona(a: ResultadoAlgoritmo, b: ResultadoAlgoritmo): boolean | null {
+  if (!a.regiones.length || !b.regiones.length) return null;
+  return LOCALIZACIONES_EEF.some(
+    (l) => a.regiones.some((x) => l.compatibles.includes(x.codigo)) && b.regiones.some((x) => l.compatibles.includes(x.codigo)),
   );
+}
+
+/** Resultados de los algoritmos de comparación sobre el mismo ECG, con su detalle desplegable. */
+function ComparacionAlgoritmos({ principal, comparaciones }: { principal: ResultadoAlgoritmo; comparaciones: ResultadoAlgoritmo[] }) {
+  const nombre = (r: ResultadoAlgoritmo) => NOMBRES_ALGORITMO[r.algoritmo ?? 'arruda'];
   return (
-    <section className="comparacion-algoritmos" aria-labelledby="titulo-comparacion" data-testid="comparacion-arruda">
-      <h3 id="titulo-comparacion">Comparación con {NOMBRES_ALGORITMO.arruda}</h3>
+    <section className="comparacion-algoritmos" aria-labelledby="titulo-comparacion" data-testid="comparacion-algoritmos">
+      <h3 id="titulo-comparacion">Comparación con otros algoritmos (mismo ECG)</h3>
       <table className="criterios">
         <thead>
           <tr>
             <th scope="col">Algoritmo</th>
             <th scope="col">Localización</th>
+            <th scope="col">¿Misma zona que el principal?</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>{NOMBRES_ALGORITMO.easy_wpw} (principal)</td>
-            <td>{principal.regiones.length ? regiones(principal) : 'sin localización'}</td>
+            <td>{nombre(principal)} (principal)</td>
+            <td>{localizacion(principal)}</td>
+            <td>—</td>
           </tr>
-          <tr>
-            <td>{NOMBRES_ALGORITMO.arruda}</td>
-            <td>{arruda.regiones.length ? regiones(arruda) : 'sin localización'}</td>
-          </tr>
+          {comparaciones.map((c) => {
+            const m = mismaZona(principal, c);
+            return (
+              <tr key={c.algoritmo} data-testid={`comparacion-${c.algoritmo}`}>
+                <td>{nombre(c)}</td>
+                <td>{localizacion(c)}</td>
+                <td>{m === null ? 'sin localización' : m ? 'Sí' : 'No'}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
-      <p className="nota">
-        {arruda.regiones.length && principal.regiones.length
-          ? coinciden
-            ? 'Los dos algoritmos señalan la misma zona.'
-            : 'Los algoritmos no coinciden. El estudio electrofisiológico dirá cuál acertó.'
-          : 'Uno de los algoritmos no dio localización.'}
-      </p>
-      <details className="detalle-comparacion">
-        <summary>Ver el recorrido de {NOMBRES_ALGORITMO.arruda}</summary>
-        <PanelResultado resultado={arruda} desactualizado={false} onReiniciar={() => {}} titulo={`Resultado — ${NOMBRES_ALGORITMO.arruda}`} sinAcciones />
-      </details>
+      <p className="nota">El estudio electrofisiológico dirá cuál acertó. Se guardan las tres predicciones.</p>
+      {comparaciones.map((c) => (
+        <details key={c.algoritmo} className="detalle-comparacion">
+          <summary>Ver el recorrido de {nombre(c)}</summary>
+          <PanelResultado resultado={c} desactualizado={false} onReiniciar={() => {}} titulo={`Resultado — ${nombre(c)}`} sinAcciones />
+        </details>
+      ))}
     </section>
   );
 }

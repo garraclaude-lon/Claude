@@ -788,3 +788,5 @@ main { display: grid; gap: 20px; }
 .detalle-comparacion .panel-resultado { margin-top: 12px; box-shadow: none; }
 .aciertos-algoritmos { margin-top: 18px; overflow-x: auto; }
 .aciertos-algoritmos td, .aciertos-algoritmos th { white-space: nowrap; }
+.sector-horario { margin: 4px 0 8px; font-size: 0.98rem; }
+.sector-horario strong { color: var(--primario); }

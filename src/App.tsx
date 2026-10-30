@@ -54,7 +54,7 @@ export function App({ obtenerLector, preparar, obtenerRepositorio = obtenerRepos
           <h1>
             WPW Navigator 3D <span className="by">by Longa</span>
           </h1>
-          <p className="subtitulo">Localización de vías accesorias — EASY-WPW y Arruda</p>
+          <p className="subtitulo">Localización de vías accesorias — SMART-WPW, EASY-WPW y Arruda</p>
         </div>
       </header>
 

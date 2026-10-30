@@ -30,7 +30,7 @@ describe('Pantalla de inicio', () => {
   it('muestra encabezado, pie y las dos versiones', () => {
     render(<App obtenerLector={sinIA} />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('WPW Navigator 3D by Longa');
-    expect(screen.getByText('Localización de vías accesorias — EASY-WPW y Arruda')).toBeInTheDocument();
+    expect(screen.getByText('Localización de vías accesorias — SMART-WPW, EASY-WPW y Arruda')).toBeInTheDocument();
     expect(screen.queryByText(/Prototipo de investigación\./)).not.toBeInTheDocument();
     expect(screen.getByText(/Prototipo sin uso asistencial/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Subir ECG/ })).toBeInTheDocument();

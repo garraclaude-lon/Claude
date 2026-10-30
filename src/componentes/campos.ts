@@ -71,6 +71,21 @@ export const CAMPOS: Record<CampoECG, DefCampo> = {
       { valor: 'no_evaluable', etiqueta: 'No evaluable' },
     ],
   },
+  // --- SMART-WPW
+  deltaIII: delta('deltaIII', 'III'),
+  qrsV3: {
+    campo: 'qrsV3',
+    derivacion: 'V3',
+    etiqueta: 'Polaridad del QRS en V3',
+    pregunta: '¿Cómo es la polaridad (+ o -) del QRS en V3?',
+    ayuda: 'Positiva si predomina una onda R prominente; negativa si predomina una S profunda (o una r pequeña seguida de S profunda).',
+    opciones: [
+      { valor: 'positiva', etiqueta: 'Positiva' },
+      { valor: 'negativa', etiqueta: 'Negativa' },
+      { valor: 'isoelectrica', etiqueta: 'Isodifásica' },
+      { valor: 'no_evaluable', etiqueta: 'No evaluable' },
+    ],
+  },
   // --- EASY-WPW
   qrsV1: {
     campo: 'qrsV1',

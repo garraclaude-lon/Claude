@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { aplicarArruda, ENTRADA_VACIA } from '../algoritmo/arruda';
 import { aplicarEasyWPW } from '../algoritmo/easywpw';
+import { aplicarSmartWPW } from '../algoritmo/smartwpw';
 import type { EntradaECG } from '../algoritmo/tipos';
 import { describirPaciente, grupoEtario, validarDatosPaciente } from '../registro/paciente';
 import { construirEEF, distanciaHoras, evaluarConcordancia, generarCodigo, LEGADO_A_HORA, LOCALIZACIONES_EEF, normalizarCodigo, POR_CODIGO_EEF } from '../registro/eef';
-import { construirRegistro, obtenerRepositorioClaude, prediccionesDe, resumir, tasaConcordancia } from '../registro/registro';
+import { construirRegistro, obtenerRepositorioClaude, prediccionesDe, prediccionesDeResultados, resumir, tasaConcordancia } from '../registro/registro';
 import { REGIONES } from '../algoritmo/catalogo';
 
 describe('grupoEtario', () => {
@@ -125,7 +126,7 @@ describe('resumir', () => {
     const reg = (codigo: string, loc: 'LAL' | 'LP' | 'RL') => {
       const preds = { easy_wpw: easy.regiones.map((x) => x.codigo), arruda: arruda.regiones.map((x) => x.codigo) };
       return construirRegistro({
-        codigo, modo: 'imagen', paciente: p, criterios, resultado: easy, comparacion: arruda,
+        codigo, modo: 'imagen', paciente: p, criterios, resultado: easy, comparaciones: [arruda],
         eef: construirEEF(preds.easy_wpw, loc, 'ablacion_exitosa', preds),
       });
     };
@@ -140,7 +141,8 @@ describe('resumir', () => {
     const r = resumir([a, reg('WPW-AAAAA3', 'LP'), reg('WPW-AAAAA4', 'RL')]);
     expect(r.porAlgoritmo.easy_wpw).toEqual({ casos: 3, coincide: 1, parcial: 0, noCoincide: 2, sinPrediccion: 0, conHora: 0, sumaHoras: 0 });
     expect(r.porAlgoritmo.arruda).toEqual({ casos: 3, coincide: 1, parcial: 0, noCoincide: 2, sinPrediccion: 0, conHora: 0, sumaHoras: 0 });
-    expect(r.pareado).toEqual({ casos: 3, ambos: 0, soloEasy: 1, soloArruda: 1, ninguno: 1 });
+    expect(r.pareados.find((x) => x.a === 'easy_wpw' && x.b === 'arruda')).toEqual({ a: 'easy_wpw', b: 'arruda', casos: 3, ambos: 0, soloA: 1, soloB: 1, ninguno: 1 });
+    expect(r.pareados.find((x) => x.a === 'smart_wpw' && x.b === 'arruda')?.casos).toBe(0);
   });
 
   it('acumula el error en horas por algoritmo', () => {
@@ -150,10 +152,32 @@ describe('resumir', () => {
     const arruda = aplicarArruda(criterios); // IP/IPL (mitral IV–VII)
     const preds = { easy_wpw: ['LL_LAL'], arruda: ['LP_LPL'] };
     const reg = (codigo: string, sitio: 'MV_2' | 'MV_6') =>
-      construirRegistro({ codigo, modo: 'imagen', paciente: p, criterios, resultado: easy, comparacion: arruda, eef: construirEEF(['LL_LAL'], sitio, null, preds) });
+      construirRegistro({ codigo, modo: 'imagen', paciente: p, criterios, resultado: easy, comparaciones: [arruda], eef: construirEEF(['LL_LAL'], sitio, null, preds) });
     const r = resumir([reg('WPW-AAAAB2', 'MV_2'), reg('WPW-AAAAB3', 'MV_6')]);
     expect(r.porAlgoritmo.easy_wpw).toMatchObject({ conHora: 2, sumaHoras: 0 + 3 });
     expect(r.porAlgoritmo.arruda).toMatchObject({ conHora: 2, sumaHoras: 2 + 0 });
+  });
+
+  it('SMART-WPW se compara con el EEF por hora exacta del sector', () => {
+    const p = { sexo: 'femenino' as const, edadAnios: 11, edadMeses: 0 };
+    // SMART: tricuspídeo septal, solo III negativa → MS (III)
+    const criterios = e({ deltaV1: 'negativa', qrsV3: 'positiva', deltaIII: 'negativa', deltaAVF: 'positiva', deltaII: 'positiva' });
+    const smart = aplicarSmartWPW(criterios);
+    expect(smart.sector).toMatchObject({ anillo: 'TV', horas: [3], sigla: 'MS' });
+    const reg = (codigo: string, sitio: 'TV_3' | 'TV_4') => {
+      const preds = prediccionesDeResultados(smart, []);
+      const comparables = { smart_wpw: { regiones: preds.smart_wpw!.regiones, sector: preds.smart_wpw!.sector } };
+      return construirRegistro({ codigo, modo: 'imagen', paciente: p, criterios, resultado: smart, eef: construirEEF(comparables.smart_wpw, sitio, null, comparables) });
+    };
+    const ok = reg('WPW-AAAAC2', 'TV_3');
+    expect(ok.predicciones.smart_wpw?.sector).toEqual({ anillo: 'TV', horas: [3], sigla: 'MS' });
+    expect(ok.eef?.concordancia).toBe('concordante');
+    // TV IV: por región sería compatible (MST), pero el sector de SMART es III → no coincide, a 1 hora.
+    const cerca = reg('WPW-AAAAC3', 'TV_4');
+    expect(cerca.eef?.concordancia).toBe('discordante');
+    expect(cerca.eef?.distanciaHoras).toBe(1);
+    const r = resumir([ok, cerca]);
+    expect(r.porAlgoritmo.smart_wpw).toMatchObject({ casos: 2, coincide: 1, noCoincide: 1, conHora: 2, sumaHoras: 1 });
   });
 
   it('los registros anteriores (sin predicciones) cuentan como Arruda', () => {

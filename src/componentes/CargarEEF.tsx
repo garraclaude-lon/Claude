@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NOMBRES_ALGORITMO, REGIONES } from '../algoritmo/catalogo';
 import type { CodigoAlgoritmo, CodigoRegion } from '../algoritmo/tipos';
-import { construirEEF, normalizarCodigo, type CodigoEEF, type Concordancia, type DatosEEF, type FuenteEEF } from '../registro/eef';
+import { construirEEF, normalizarCodigo, ROMANOS, type CodigoEEF, type Concordancia, type DatosEEF, type FuenteEEF } from '../registro/eef';
 import { NOMBRES_GRUPO, NOMBRES_SEXO } from '../registro/paciente';
 import { mensajeErrorRegistro, prediccionesDe, type Prediccion, type RegistroGuardado, type Repositorio } from '../registro/registro';
 import { DiagramaAnillos } from './DiagramaAnillos';
@@ -13,13 +13,19 @@ export function nombreRegiones(codigos: readonly string[] | undefined): string {
 }
 
 /** Orden en que se muestran los algoritmos: el principal de "Subir ECG" primero. */
-const ORDEN_ALGORITMOS: CodigoAlgoritmo[] = ['easy_wpw', 'arruda'];
+const ORDEN_ALGORITMOS: CodigoAlgoritmo[] = ['smart_wpw', 'easy_wpw', 'arruda'];
 
 /** Predicción de cada algoritmo en texto: "EASY-WPW: PST · Arruda: PST o PSM". */
 export function textoPredicciones(preds: Partial<Record<CodigoAlgoritmo, Prediccion>>): string {
   const algs = ORDEN_ALGORITMOS.filter((a) => preds[a]);
   if (algs.length <= 1) return nombreRegiones(algs[0] ? preds[algs[0]]!.regiones : undefined);
-  return algs.map((a) => `${NOMBRES_ALGORITMO[a].split(' ')[0]}: ${nombreRegiones(preds[a]!.regiones)}`).join(' · ');
+  return algs.map((a) => `${NOMBRES_ALGORITMO[a].split(' ')[0]}: ${textoPrediccion(preds[a]!)}`).join(' · ');
+}
+
+/** Una predicción en texto: el sector horario si lo hay ("TV IV (MSP)"), si no las regiones. */
+function textoPrediccion(p: Prediccion): string {
+  if (p.sector) return `${p.sector.anillo} ${p.sector.horas.map((h) => ROMANOS[h]).join('–')} (${p.sector.sigla})`;
+  return nombreRegiones(p.regiones);
 }
 
 /** Concordancia de cada algoritmo, para mostrar debajo del selector del EEF. */
@@ -60,8 +66,9 @@ export function EditorEEF({ registro, repositorio, onCerrar }: PropsEditor) {
 
   const regiones = registro.resultado?.regiones ?? [];
   const preds = prediccionesDe(registro);
-  const regionesPorAlg = Object.fromEntries(Object.entries(preds).map(([a, p]) => [a, p.regiones]));
-  const datosEEF = eef ? construirEEF(regiones, eef, fuente, registro.predicciones ? regionesPorAlg : undefined) : null;
+  const comparables = Object.fromEntries(Object.entries(preds).map(([a, p]) => [a, { regiones: p.regiones, sector: p.sector }]));
+  const principal = comparables[registro.algoritmo ?? 'arruda'] ?? regiones;
+  const datosEEF = eef ? construirEEF(principal, eef, fuente, registro.predicciones ? comparables : undefined) : null;
 
   const guardar = async () => {
     setEstado('guardando');

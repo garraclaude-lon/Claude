@@ -54,7 +54,7 @@ En pantalla las regiones se muestran con siglas en español. Los códigos intern
 | DL | Derecha lateral | RL | `RL` |
 | DP/DPL | Derecha posterior o posterolateral | RP/RPL | `RP_RPL` |
 
-## EASY-WPW (algoritmo principal de "Subir ECG")
+## EASY-WPW (comparación en "Subir ECG")
 
 Implementado en `src/algoritmo/easywpw.ts` (versión `easy-wpw-2023-impl-0.1.0`). Transcripción y
 tabla de decisiones en [algoritmos/EASY-WPW.md](algoritmos/EASY-WPW.md). Criterios:
@@ -66,7 +66,22 @@ tabla de decisiones en [algoritmos/EASY-WPW.md](algoritmos/EASY-WPW.md). Criteri
 Decisiones propias de esta implementación (a validar con el equipo): un **empate** en la delta más
 positiva da resultado indeterminado; una transición **en V3** cuenta como "hasta V3".
 
-En "Subir ECG" se calculan EASY-WPW (principal) y Arruda (comparación) sobre los mismos datos
+En "Subir ECG" EASY-WPW se calcula como comparación, junto con Arruda, sobre los mismos datos
 confirmados. Dos predicciones "señalan la misma zona" si algún sitio del EEF es compatible con ambas
 (por ejemplo, PST y PST/OSC).
+
+## SMART-WPW (algoritmo principal de "Subir ECG")
+
+Implementado en `src/algoritmo/smartwpw.ts` (versión `smart-wpw-2025-impl-0.1.0`). Transcripción,
+patrones por hora y rendimiento en [algoritmos/SMART-WPW.md](algoritmos/SMART-WPW.md). Criterios:
+
+- **Onda delta en V1** (`deltaV1`): negativa → tricuspídeo; positiva → mitral.
+- **Polaridad del QRS en V3** (`qrsV3`, solo tricuspídeo): positiva → septal; negativa → pared libre.
+- **Delta en II, III y aVF** (`deltaII`, `deltaIII`, `deltaAVF`): cuántas son negativas y cuáles
+  (ninguna; III; III y aVF; las tres).
+
+Predice un **sector horario** que se compara con la hora del EEF por coincidencia exacta de hora.
+Decisiones propias (a validar): V1 isoeléctrica → mitral; V3 isodifásica → indeterminado;
+isoeléctrica en una inferior no cuenta como negativa; combinaciones de inferiores no previstas →
+indeterminado.
 

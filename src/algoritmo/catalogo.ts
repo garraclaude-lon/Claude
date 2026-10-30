@@ -94,6 +94,8 @@ export const NOMBRES_CAMPOS: Record<CampoECG, string> = {
   qrsV1: 'Polaridad del QRS en V1',
   transicionQRS: 'Transición del QRS en precordiales',
   deltaMasPositiva: 'Derivación con la onda delta más positiva',
+  deltaIII: 'Onda delta en III',
+  qrsV3: 'Polaridad del QRS en V3',
 };
 
 export const NOMBRES_VALORES: Record<string, string> = {
@@ -122,7 +124,15 @@ export const REFERENCIA_EASY_WPW =
   'ECG-algorithm for easy and reliable localization of manifest accessory pathways in children ' +
   'and adults. Europace. 2023;25(2):600-9.';
 
-export const NOMBRES_ALGORITMO: Record<'arruda' | 'easy_wpw', string> = {
+export const VERSION_SMART_WPW = 'smart-wpw-2025-impl-0.1.0';
+
+export const REFERENCIA_SMART_WPW =
+  'Khalaph M, Trajkovska N, Didenko M, et al. A novel ECG algorithm for accurate localization of ' +
+  'manifest accessory pathways in both children and adults: SMART-WPW. Heart Rhythm. ' +
+  '2025;22(9):e738-e745.';
+
+export const NOMBRES_ALGORITMO: Record<'arruda' | 'easy_wpw' | 'smart_wpw', string> = {
   arruda: 'Arruda (1998)',
   easy_wpw: 'EASY-WPW (2023)',
+  smart_wpw: 'SMART-WPW (2025)',
 };

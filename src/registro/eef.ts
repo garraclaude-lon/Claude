@@ -146,13 +146,17 @@ const HORAS_REGION: Partial<Record<CodigoRegion, { anillo: AnilloEEF; horas: Hor
  * (0 = la hora confirmada está dentro de la región predicha). null si no es comparable
  * (otro anillo, sitio sin hora o región sin horas definidas). Con dos regiones, la menor.
  */
-export function distanciaHoras(regiones: readonly string[], localizacion: CodigoEEF): number | null {
+export function distanciaHoras(pred: PrediccionComparable | readonly string[], localizacion: CodigoEEF): number | null {
   const sitio = POR_CODIGO_EEF[localizacion];
   if (!sitio?.anillo || !sitio.hora) return null;
+  const { regiones, sector } = normalizarPrediccion(pred);
+  // Con sector horario (SMART-WPW) se mide contra sus horas exactas.
+  const candidatos = sector
+    ? [{ anillo: sector.anillo, horas: sector.horas }]
+    : regiones.map((r) => HORAS_REGION[r as CodigoRegion]).filter((h): h is NonNullable<typeof h> => !!h);
   let mejor: number | null = null;
-  for (const r of regiones) {
-    const h = HORAS_REGION[r as CodigoRegion];
-    if (!h || h.anillo !== sitio.anillo) continue;
+  for (const h of candidatos) {
+    if (h.anillo !== sitio.anillo) continue;
     for (const x of h.horas) {
       const d = Math.abs(x - sitio.hora);
       const circ = Math.min(d, 12 - d);
@@ -189,10 +193,24 @@ export const NOMBRES_CONCORDANCIA: Record<Concordancia, string> = {
   no_evaluable: 'No evaluable',
 };
 
-export function evaluarConcordancia(regionesPredichas: readonly string[], localizacion: CodigoEEF): Concordancia {
+/** Predicción para comparar con el EEF: regiones y, si el algoritmo lo da, el sector horario. */
+export interface PrediccionComparable {
+  regiones: readonly string[];
+  sector?: { anillo: AnilloEEF; horas: readonly number[] };
+}
+
+const normalizarPrediccion = (p: PrediccionComparable | readonly string[]): PrediccionComparable =>
+  Array.isArray(p) ? { regiones: p as readonly string[] } : (p as PrediccionComparable);
+
+export function evaluarConcordancia(pred: PrediccionComparable | readonly string[], localizacion: CodigoEEF): Concordancia {
   const sitio = POR_CODIGO_EEF[localizacion];
   if (!sitio || !sitio.evaluable) return 'no_evaluable';
-  if (regionesPredichas.length === 0) return 'sin_prediccion';
+  const { regiones: regionesPredichas, sector } = normalizarPrediccion(pred);
+  if (regionesPredichas.length === 0 && !sector) return 'sin_prediccion';
+  // Sector horario frente a un sitio cargado por hora: coincide si la hora está en el sector.
+  if (sector && sitio.anillo && sitio.hora) {
+    return sector.anillo === sitio.anillo && sector.horas.includes(sitio.hora) ? 'concordante' : 'discordante';
+  }
   const aciertos = regionesPredichas.filter((r) => (sitio.compatibles as string[]).includes(r)).length;
   if (aciertos === 0) return 'discordante';
   return regionesPredichas.length > 1 ? 'parcial' : 'concordante';
@@ -215,10 +233,10 @@ export interface DatosEEF {
 }
 
 export function construirEEF(
-  regionesPredichas: readonly string[],
+  regionesPredichas: PrediccionComparable | readonly string[],
   localizacion: CodigoEEF,
   fuente: FuenteEEF | null,
-  predicciones?: Partial<Record<CodigoAlgoritmo, readonly string[]>>,
+  predicciones?: Partial<Record<CodigoAlgoritmo, PrediccionComparable | readonly string[]>>,
 ): DatosEEF {
   const sitio = POR_CODIGO_EEF[localizacion];
   const datos: DatosEEF = { localizacion, fuente, concordancia: evaluarConcordancia(regionesPredichas, localizacion) };

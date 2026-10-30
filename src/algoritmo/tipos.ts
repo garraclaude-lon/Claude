@@ -36,6 +36,10 @@ export interface EntradaECG {
   transicionQRS: TransicionQRS | null;
   /** EASY-WPW: derivación con la onda delta más positiva. */
   deltaMasPositiva: DeltaMasPositiva | null;
+  /** SMART-WPW: polaridad de la onda delta en III. */
+  deltaIII: Polaridad | null;
+  /** SMART-WPW: polaridad predominante del QRS en V3. */
+  qrsV3: Polaridad | null;
 }
 
 export type CampoECG = keyof EntradaECG;
@@ -94,7 +98,17 @@ export interface PasoTraza {
 }
 
 /** Algoritmos implementados. */
-export type CodigoAlgoritmo = 'arruda' | 'easy_wpw';
+export type CodigoAlgoritmo = 'arruda' | 'easy_wpw' | 'smart_wpw';
+
+/** Sector del reloj de los anillos (vista OAI, XII arriba), como lo predice SMART-WPW. */
+export interface SectorHorario {
+  anillo: 'TV' | 'MV';
+  /** Horas del sector (1 a 12). */
+  horas: number[];
+  /** Sigla del artículo (A, LA, LP, P, PS, MSP, MS, AS, L, HPL, LPL, P&PS). */
+  sigla: string;
+  nombre: string;
+}
 
 export interface ResultadoArruda {
   estado: EstadoResultado;
@@ -111,6 +125,8 @@ export interface ResultadoArruda {
   algoritmo?: CodigoAlgoritmo;
   /** Nombres de los pasos del algoritmo, para el indicador de avance. */
   nombresPasos?: string[];
+  /** Sector horario predicho (algoritmos que localizan por hora del reloj). */
+  sector?: SectorHorario;
 }
 
 /** Resultado de cualquier algoritmo (misma forma que el de Arruda). */

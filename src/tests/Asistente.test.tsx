@@ -86,55 +86,61 @@ describe('Asistente guiado', () => {
   });
 });
 
-describe('Asistente con EASY-WPW como principal y Arruda como comparación', () => {
-  it('pregunta primero EASY-WPW, después Arruda, y muestra los dos resultados', async () => {
+describe('Asistente con SMART-WPW como principal, EASY-WPW y Arruda como comparación', () => {
+  it('pregunta SMART-WPW, después EASY-WPW y Arruda, sin repetir datos, y muestra los tres', async () => {
     const u = userEvent.setup();
-    let comparacion: string | undefined;
+    let guardado: string | undefined;
     render(
       <Asistente
-        modo="easy_y_arruda"
+        modo="smart_easy_arruda"
         onSalir={() => {}}
-        alTerminar={({ resultado, comparacion: c }) => {
-          comparacion = `${resultado.algoritmo}:${resultado.regiones.map((r) => r.codigo)}|${c?.algoritmo}:${c?.regiones.map((r) => r.codigo)}`;
+        alTerminar={({ resultado, comparaciones }) => {
+          guardado = [resultado, ...(comparaciones ?? [])].map((r) => `${r.algoritmo}:${r.regiones.map((x) => x.codigo)}`).join('|');
           return null;
         }}
       />,
     );
-    // EASY-WPW: V1 negativa → transición hasta V3 → delta más positiva en aVL → PST
-    expect(screen.getByTestId('fase-algoritmo')).toHaveTextContent('Algoritmo principal: EASY-WPW');
-    expect(pregunta()).toHaveTextContent('polaridad (+ o -) del QRS en V1');
+    // SMART-WPW: delta V1 negativa → V3 positiva (septal) → III, aVF y II negativas → PS (V)
+    expect(screen.getByTestId('fase-algoritmo')).toHaveTextContent('Algoritmo principal: SMART-WPW');
+    expect(pregunta()).toHaveTextContent('V1');
     await responder(u, 'Negativa');
-    expect(pregunta()).toHaveTextContent('transición del QRS');
+    expect(pregunta()).toHaveTextContent('polaridad (+ o -) del QRS en V3');
+    await responder(u, 'Positiva');
+    await responder(u, 'Negativa'); // III
+    await responder(u, 'Negativa'); // aVF
+    await responder(u, 'Negativa'); // II
+
+    // EASY-WPW sobre el mismo ECG
+    expect(screen.getByTestId('fase-algoritmo')).toHaveTextContent('Comparación: EASY-WPW');
+    await responder(u, 'Negativa'); // QRS en V1
     await responder(u, 'Hasta V3');
-    expect(pregunta()).toHaveTextContent('onda Delta es más positiva');
     await responder(u, 'aVL');
 
-    // Arruda sobre el mismo ECG: I positiva, R ≤ S en V1, II positiva, V1 negativa, aVF negativa → PST/OSC
+    // Arruda: solo pide lo que falta (II ya está: negativa → PS subepicárdica)
     expect(screen.getByTestId('fase-algoritmo')).toHaveTextContent('Comparación: Arruda');
-    await responder(u, 'Positiva');
+    await responder(u, 'Positiva'); // delta I
     await responder(u, 'R ≤ S');
-    await responder(u, 'Positiva');
-    await responder(u, 'Negativa');
-    await responder(u, 'Negativa');
 
     const principal = screen.getByTestId('panel-resultado');
-    expect(within(principal).getByRole('heading', { level: 2 })).toHaveTextContent('Resultado — EASY-WPW');
-    expect(within(principal).getByTestId('region')).toHaveTextContent('PST');
-    const comp = screen.getByTestId('comparacion-arruda');
-    expect(comp).toHaveTextContent('PST/OSC');
-    // PST (EASY-WPW) y PST/OSC (Arruda) corresponden al mismo sitio posteroseptal tricuspídeo
-    expect(comp).toHaveTextContent('Los dos algoritmos señalan la misma zona');
-    expect(comparacion).toBe('easy_wpw:PSTA|arruda:PSTA_CSOS');
+    expect(within(principal).getByRole('heading', { level: 2 })).toHaveTextContent('Resultado — SMART-WPW');
+    expect(within(principal).getByTestId('sector-horario')).toHaveTextContent('Tricuspídeo V (posteroseptal)');
+    expect(within(principal).getByTestId('dg-sector')).toBeInTheDocument();
+    expect(screen.getByTestId('comparacion-easy_wpw')).toHaveTextContent('Sí');
+    expect(screen.getByTestId('comparacion-arruda')).toHaveTextContent('PS subepicárdica');
+    expect(screen.getByTestId('comparacion-arruda')).toHaveTextContent('No');
+    expect(guardado).toBe('smart_wpw:PSTA|easy_wpw:PSTA|arruda:PS_SUBEPI');
   });
 
-  it('“Atrás” vuelve de Arruda a la última pregunta de EASY-WPW', async () => {
+  it('“Atrás” vuelve de la comparación a la última pregunta de SMART-WPW', async () => {
     const u = userEvent.setup();
-    render(<Asistente modo="easy_y_arruda" onSalir={() => {}} />);
-    await responder(u, 'Positiva'); // V1
-    await responder(u, 'III'); // EASY completo: IL/IAL
-    expect(screen.getByTestId('fase-algoritmo')).toHaveTextContent('Comparación: Arruda');
+    render(<Asistente modo="smart_easy_arruda" onSalir={() => {}} />);
+    await responder(u, 'Positiva'); // delta V1 → mitral
+    await responder(u, 'Positiva'); // III
+    await responder(u, 'Positiva'); // aVF
+    await responder(u, 'Positiva'); // II → L (I–III)
+    expect(screen.getByTestId('fase-algoritmo')).toHaveTextContent('Comparación: EASY-WPW');
     await u.click(screen.getByRole('button', { name: '← Atrás' }));
-    expect(screen.getByTestId('fase-algoritmo')).toHaveTextContent('Algoritmo principal: EASY-WPW');
-    expect(pregunta()).toHaveTextContent('onda Delta es más positiva');
+    expect(screen.getByTestId('fase-algoritmo')).toHaveTextContent('Algoritmo principal: SMART-WPW');
+    expect(pregunta()).toHaveTextContent('II');
   });
 });

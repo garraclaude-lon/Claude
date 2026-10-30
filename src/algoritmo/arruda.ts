@@ -47,6 +47,8 @@ export const ENTRADA_VACIA: EntradaECG = {
   qrsV1: null,
   transicionQRS: null,
   deltaMasPositiva: null,
+  deltaIII: null,
+  qrsV3: null,
 };
 
 function criterio(entrada: EntradaECG, campo: CampoECG): CriterioUsado {

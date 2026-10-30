@@ -60,10 +60,10 @@ export function GuardarRegistro({ sesion, datos, paciente, repositorio, onOtroPa
     setFuenteEstado(v);
   };
 
-  const regiones = datos.resultado.regiones.map((r) => r.codigo);
-  const preds = prediccionesDeResultados(datos.resultado, datos.comparacion);
-  const regionesPorAlg = Object.fromEntries(Object.entries(preds).map(([a, p]) => [a, p.regiones]));
-  const datosEEF = eef ? construirEEF(regiones, eef, fuente, regionesPorAlg) : null;
+  const preds = prediccionesDeResultados(datos.resultado, datos.comparaciones);
+  const comparables = Object.fromEntries(Object.entries(preds).map(([a, p]) => [a, { regiones: p.regiones, sector: p.sector }]));
+  const principal = comparables[datos.resultado.algoritmo ?? 'arruda'];
+  const datosEEF = eef ? construirEEF(principal, eef, fuente, comparables) : null;
   const registro = construirRegistro({ ...datos, codigo: sesion.current.codigo, eef: datosEEF });
   const json = JSON.stringify(registro);
   const guardado = sesion.current.guardadoJson !== null;

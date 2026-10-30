@@ -1,6 +1,7 @@
 import { NOMBRES_CAMPOS, NOMBRES_VALORES } from '../algoritmo/catalogo';
 import type { EstadoResultado, ResultadoArruda } from '../algoritmo/tipos';
 import { useState } from 'react';
+import { textoHorasSector } from '../algoritmo/smartwpw';
 import { DiagramaAnillos } from './DiagramaAnillos';
 import { Visor3D } from './Visor3D';
 
@@ -79,9 +80,15 @@ export function PanelResultado({ resultado, desactualizado, onReiniciar, titulo 
         </div>
       )}
 
+      {r.sector && (
+        <p className="sector-horario" data-testid="sector-horario">
+          Sector horario: <strong>{textoHorasSector(r.sector)}</strong> · {r.sector.sigla}
+        </p>
+      )}
+
       <p className="mensaje">{r.mensaje}</p>
 
-      {r.regiones.length > 0 && <DiagramaAnillos predichas={r.regiones.map((x) => x.codigo)} />}
+      {r.regiones.length > 0 && <DiagramaAnillos predichas={r.regiones.map((x) => x.codigo)} sector={r.sector} />}
       {r.regiones.length > 0 && !sinAcciones && (
         <button type="button" className="boton-3d" onClick={() => setVer3D(true)} disabled={desactualizado}>
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

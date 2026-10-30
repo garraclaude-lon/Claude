@@ -11,7 +11,7 @@ import type { PropuestaIA } from '../ia/lectorIA';
 import { distanciaHoras, evaluarConcordancia, type CodigoEEF, type Concordancia, type DatosEEF } from './eef';
 import { edadTotalMeses, grupoEtario, type DatosPaciente, type GrupoEtario, type Sexo } from './paciente';
 
-export const VERSION_APP = '0.8.0';
+export const VERSION_APP = '0.9.0';
 export const ESQUEMA_REGISTRO = 3;
 export const COLECCION = 'analisis';
 
@@ -22,6 +22,8 @@ export interface Prediccion {
   estado: ResultadoAlgoritmo['estado'];
   regiones: string[];
   version: string;
+  /** Sector horario predicho (SMART-WPW). */
+  sector?: { anillo: 'TV' | 'MV'; horas: number[]; sigla: string };
 }
 
 export interface RegistroAnalisis {
@@ -71,26 +73,26 @@ export interface DatosParaRegistro {
   paciente: DatosPaciente;
   criterios: EntradaECG;
   resultado: ResultadoAlgoritmo;
-  /** Resultado de otro algoritmo sobre los mismos datos (comparación). */
-  comparacion?: ResultadoAlgoritmo;
+  /** Resultados de otros algoritmos sobre los mismos datos (comparación). */
+  comparaciones?: ResultadoAlgoritmo[];
   propuesta?: PropuestaIA | null;
   /** Criterios que el profesional revisó (para la concordancia con la IA). */
   revisados?: CampoECG[];
 }
 
-const aPrediccion = (r: ResultadoAlgoritmo): Prediccion => ({
-  estado: r.estado,
-  regiones: r.regiones.map((x) => x.codigo),
-  version: r.versionAlgoritmo,
-});
+const aPrediccion = (r: ResultadoAlgoritmo): Prediccion => {
+  const p: Prediccion = { estado: r.estado, regiones: r.regiones.map((x) => x.codigo), version: r.versionAlgoritmo };
+  if (r.sector) p.sector = { anillo: r.sector.anillo, horas: [...r.sector.horas], sigla: r.sector.sigla };
+  return p;
+};
 
-/** Predicciones por algoritmo de un resultado principal y, si hay, el de comparación. */
+/** Predicciones por algoritmo del resultado principal y de los de comparación. */
 export function prediccionesDeResultados(
   principal: ResultadoAlgoritmo,
-  comparacion?: ResultadoAlgoritmo,
+  comparaciones: ResultadoAlgoritmo[] = [],
 ): Partial<Record<CodigoAlgoritmo, Prediccion>> {
   const p: Partial<Record<CodigoAlgoritmo, Prediccion>> = { [principal.algoritmo ?? 'arruda']: aPrediccion(principal) };
-  if (comparacion) p[comparacion.algoritmo ?? 'arruda'] = aPrediccion(comparacion);
+  for (const c of comparaciones) p[c.algoritmo ?? 'arruda'] = aPrediccion(c);
   return p;
 }
 
@@ -127,7 +129,7 @@ export function construirRegistro(d: DatosParaRegistro): RegistroAnalisis {
           ).length,
         }
       : null,
-    predicciones: prediccionesDeResultados(d.resultado, d.comparacion),
+    predicciones: prediccionesDeResultados(d.resultado, d.comparaciones),
     eef: d.eef ?? null,
   };
 }
@@ -162,14 +164,26 @@ export interface AciertosAlgoritmo {
   sumaHoras: number;
 }
 
-/** Casos en los que se calcularon los dos algoritmos y hay EEF evaluable (comparación pareada). */
+/**
+ * Comparación pareada de dos algoritmos: casos en los que se calcularon ambos sobre el mismo ECG y
+ * hay EEF evaluable. `soloA` = acierta solo el primero del par; `soloB` = solo el segundo.
+ */
 export interface ComparacionPareada {
+  a: CodigoAlgoritmo;
+  b: CodigoAlgoritmo;
   casos: number;
   ambos: number;
-  soloEasy: number;
-  soloArruda: number;
+  soloA: number;
+  soloB: number;
   ninguno: number;
 }
+
+/** Pares que se comparan (el primero es el más nuevo). */
+export const PARES_ALGORITMOS: [CodigoAlgoritmo, CodigoAlgoritmo][] = [
+  ['smart_wpw', 'easy_wpw'],
+  ['smart_wpw', 'arruda'],
+  ['easy_wpw', 'arruda'],
+];
 
 // --- Resumen para la pantalla de inicio -----------------------------------
 
@@ -186,7 +200,7 @@ export interface Resumen {
   pendientesEEF: RegistroGuardado[];
   /** Aciertos frente al EEF, por algoritmo. */
   porAlgoritmo: Partial<Record<CodigoAlgoritmo, AciertosAlgoritmo>>;
-  pareado: ComparacionPareada;
+  pareados: ComparacionPareada[];
 }
 
 /** Cuenta registros. Ignora documentos con forma inesperada. */
@@ -194,7 +208,7 @@ export function resumir(registros: unknown[]): Resumen {
   const r: Resumen = {
     total: 0, porSexo: {}, porGrupo: {}, porRegion: {}, porEstado: {}, conEEF: 0, porConcordancia: {}, pendientesEEF: [],
     porAlgoritmo: {},
-    pareado: { casos: 0, ambos: 0, soloEasy: 0, soloArruda: 0, ninguno: 0 },
+    pareados: PARES_ALGORITMOS.map(([a, b]) => ({ a, b, casos: 0, ambos: 0, soloA: 0, soloB: 0, ninguno: 0 })),
   };
   const sumar = (o: Record<string, number>, k: string) => (o[k] = (o[k] ?? 0) + 1);
   for (const x of registros) {
@@ -223,10 +237,11 @@ export function resumir(registros: unknown[]): Resumen {
 function contarPorAlgoritmo(r: Resumen, preds: Partial<Record<CodigoAlgoritmo, Prediccion>>, localizacion: CodigoEEF) {
   const aciertos: Partial<Record<CodigoAlgoritmo, boolean>> = {};
   for (const [alg, p] of Object.entries(preds) as [CodigoAlgoritmo, Prediccion][]) {
-    const c = evaluarConcordancia(p.regiones ?? [], localizacion);
+    const comparable = { regiones: p.regiones ?? [], sector: p.sector };
+    const c = evaluarConcordancia(comparable, localizacion);
     if (c === 'no_evaluable') return; // vías múltiples o sin sitio confirmado: no se cuenta
     const a = (r.porAlgoritmo[alg] ??= { casos: 0, coincide: 0, parcial: 0, noCoincide: 0, sinPrediccion: 0, conHora: 0, sumaHoras: 0 });
-    const h = distanciaHoras(p.regiones ?? [], localizacion);
+    const h = distanciaHoras(comparable, localizacion);
     if (h !== null) {
       a.conHora++;
       a.sumaHoras += h;
@@ -238,12 +253,15 @@ function contarPorAlgoritmo(r: Resumen, preds: Partial<Record<CodigoAlgoritmo, P
     else a.sinPrediccion++;
     aciertos[alg] = c === 'concordante';
   }
-  if (aciertos.easy_wpw !== undefined && aciertos.arruda !== undefined) {
-    r.pareado.casos++;
-    if (aciertos.easy_wpw && aciertos.arruda) r.pareado.ambos++;
-    else if (aciertos.easy_wpw) r.pareado.soloEasy++;
-    else if (aciertos.arruda) r.pareado.soloArruda++;
-    else r.pareado.ninguno++;
+  for (const par of r.pareados) {
+    const a = aciertos[par.a];
+    const b = aciertos[par.b];
+    if (a === undefined || b === undefined) continue;
+    par.casos++;
+    if (a && b) par.ambos++;
+    else if (a) par.soloA++;
+    else if (b) par.soloB++;
+    else par.ninguno++;
   }
 }
 

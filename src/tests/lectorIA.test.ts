@@ -10,12 +10,14 @@ describe('interpretarRespuestaIA', () => {
       deltaI: 'negativa', deltaII: 'positiva', deltaAVF: 'isoelectrica', deltaV1: 'no_evaluable',
       deltaAVR: 'positiva', rsV1: 'r_mayor_s', rsIII: 'iguales',
       qrsV1: 'negativa', transicionQRS: 'hasta_v3', deltaMasPositiva: 'avl',
+      deltaIII: 'negativa', qrsV3: 'positiva',
       comentarios: { deltaI: '  inicio negativo  ' }, observacionGeneral: 'ok',
     });
     expect(p.valores).toEqual({
       deltaI: 'negativa', deltaII: 'positiva', deltaAVF: 'isoelectrica', deltaV1: 'no_evaluable',
       deltaAVR: 'positiva', rsV1: 'r_mayor_s', rsIII: 'iguales',
       qrsV1: 'negativa', transicionQRS: 'hasta_v3', deltaMasPositiva: 'avl',
+      deltaIII: 'negativa', qrsV3: 'positiva',
     });
     expect(p.comentarios.deltaI).toBe('inicio negativo');
     expect(p.calidad).toBe('buena');

@@ -12,7 +12,7 @@ colección `analisis` de la base de datos privada de la página publicada en cla
 | `codigo` | `"WPW-7F3KAB"` | Código del registro (también es el id del documento). |
 | `versionApp` | `"0.3.0"` | Versión de la app que guardó el registro. |
 | `versionAlgoritmo` | `"easy-wpw-2023-impl-0.1.0"` | Versión del algoritmo principal. |
-| `algoritmo` | `"easy_wpw"` | Algoritmo principal: `easy_wpw` (Subir ECG) o `arruda` (cuestionario guiado). Ausente en registros anteriores = `arruda`. |
+| `algoritmo` | `"smart_wpw"` | Algoritmo principal: `smart_wpw` (Subir ECG desde 0.9.0; `easy_wpw` en 0.8.x) o `arruda` (cuestionario guiado). Ausente en registros anteriores = `arruda`. |
 | `modo` | `"imagen"` | `imagen`, `guiado` o `formulario`. |
 | `paciente.sexo` | `"femenino"` | `femenino`, `masculino` o `no_consignado`. |
 | `paciente.edadAnios` / `edadMeses` | `0` / `4` | Edad cumplida. |
@@ -21,7 +21,7 @@ colección `analisis` de la base de datos privada de la página publicada en cla
 | `criterios` | `{ "deltaI": "positiva", … }` | Valores **confirmados** por el profesional. `null` = no hizo falta preguntarlo. |
 | `resultado.estado` | `"region_predicha"` | `region_predicha`, `datos_insuficientes`, `indeterminado` o `no_clasificable`. |
 | `resultado.regiones` | `["PSTA_CSOS"]` | Códigos de región del algoritmo principal (dos si no discrimina: `["PSTA","PSMA"]`). |
-| `predicciones` | `{ "easy_wpw": {…}, "arruda": {…} }` | Predicción de cada algoritmo calculado sobre el mismo ECG: `{ estado, regiones, version }`. En "Subir ECG" se guardan los dos (comparación pareada). |
+| `predicciones` | `{ "smart_wpw": {…}, "easy_wpw": {…}, "arruda": {…} }` | Predicción de cada algoritmo calculado sobre el mismo ECG: `{ estado, regiones, version, sector? }`. `sector` = `{ anillo, horas, sigla }` (SMART-WPW). En "Subir ECG" se guardan los tres (comparación pareada). |
 | `ia` | `null` o `{ valores, calidad, esECG, criteriosRevisados, coincidencias }` | Propuesta de la IA, si se usó. |
 | `eef` | `null` o `{ localizacion, fuente, concordancia }` | Resultado del estudio electrofisiológico. `null` = pendiente. |
 | `eef.localizacion` | `"LL"` | Sitio confirmado (ver tabla abajo). |

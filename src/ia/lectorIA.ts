@@ -105,6 +105,8 @@ const VALORES_PERMITIDOS: Record<CampoECG, string[]> = {
   qrsV1: VALORES_POLARIDAD,
   transicionQRS: ['hasta_v3', 'v4_o_despues', 'no_evaluable'],
   deltaMasPositiva: ['ii', 'iii', 'avr', 'avl', 'empate', 'no_evaluable'],
+  deltaIII: VALORES_POLARIDAD,
+  qrsV3: VALORES_POLARIDAD,
 };
 
 export const PROMPT_LECTURA = `Sos un asistente para un proyecto de INVESTIGACIÓN en electrofisiología pediátrica. La imagen debería ser un electrocardiograma de 12 derivaciones con preexcitación ventricular (patrón de Wolff-Parkinson-White).
@@ -112,9 +114,10 @@ export const PROMPT_LECTURA = `Sos un asistente para un proyecto de INVESTIGACI�
 Tu tarea es solo DESCRIBIR lo que se ve, para que un profesional lo revise y confirme. No des diagnóstico ni localización.
 
 Para cada criterio indicá el valor observado:
-- deltaI, deltaII, deltaAVF, deltaV1, deltaAVR: polaridad de los PRIMEROS 20 ms de la onda delta, desde su inicio más temprano identificable. Valores: "positiva", "negativa", "isoelectrica" o "no_evaluable". Una onda que comienza isoeléctrica y luego se vuelve negativa NO debe clasificarse como "negativa".
+- deltaI, deltaII, deltaIII, deltaAVF, deltaV1, deltaAVR: polaridad de los PRIMEROS 20 ms de la onda delta, desde su inicio más temprano identificable. Valores: "positiva", "negativa", "isoelectrica" o "no_evaluable". Una onda que comienza isoeléctrica y luego se vuelve negativa NO debe clasificarse como "negativa".
 - rsV1: relación de amplitud R/S del QRS en V1. Valores: "r_mayor_s", "r_menor_igual_s" o "no_evaluable".
 - rsIII: relación de amplitud R/S del QRS en III. Valores: "r_mayor_s", "r_menor_s", "iguales" o "no_evaluable".
+- qrsV3: polaridad PREDOMINANTE del QRS en V3: "positiva" si predomina una R prominente, "negativa" si predomina una S profunda (o r pequeña con S profunda), "isoelectrica" si es isodifásico, o "no_evaluable".
 - qrsV1: polaridad PREDOMINANTE del complejo QRS completo en V1 (más área por encima o por debajo de la línea de base). Valores: "positiva", "negativa", "isoelectrica" (isodifásico) o "no_evaluable".
 - transicionQRS: primera derivación precordial (V1 a V6) en la que la onda R es mayor que la S. Valores: "hasta_v3" (en V1, V2 o V3), "v4_o_despues" o "no_evaluable".
 - deltaMasPositiva: entre II, III, aVR y aVL, la derivación cuya onda delta es más positiva (si la delta no se distingue bien, el QRS más positivo). Valores: "ii", "iii", "avr", "avl", "empate" (si dos o más son igual de positivas) o "no_evaluable".
@@ -125,7 +128,7 @@ Reglas:
 - No transcribas nombres, documentos ni otros datos personales que aparezcan en la imagen.
 
 Respondé SOLO con un objeto JSON con esta forma exacta:
-{"esECG": true, "calidad": "buena" | "regular" | "mala", "deltaI": "...", "deltaII": "...", "deltaAVF": "...", "deltaV1": "...", "deltaAVR": "...", "rsV1": "...", "rsIII": "...", "qrsV1": "...", "transicionQRS": "...", "deltaMasPositiva": "...", "comentarios": {"deltaI": "frase breve sobre lo observado", "...": "..."}, "observacionGeneral": "una o dos frases sobre la calidad y limitaciones de la imagen"}`;
+{"esECG": true, "calidad": "buena" | "regular" | "mala", "deltaI": "...", "deltaII": "...", "deltaIII": "...", "deltaAVF": "...", "deltaV1": "...", "deltaAVR": "...", "rsV1": "...", "rsIII": "...", "qrsV1": "...", "transicionQRS": "...", "deltaMasPositiva": "...", "qrsV3": "...", "comentarios": {"deltaI": "frase breve sobre lo observado", "...": "..."}, "observacionGeneral": "una o dos frases sobre la calidad y limitaciones de la imagen"}`;
 
 /** Valida la respuesta de la IA. Todo valor fuera de lo permitido queda como null. */
 export function interpretarRespuestaIA(respuesta: unknown): PropuestaIA {

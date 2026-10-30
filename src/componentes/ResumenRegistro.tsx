@@ -137,8 +137,9 @@ const pct = (n: number, d: number) => (d > 0 ? `${Math.round((n / d) * 100)}%` :
 
 /** Aciertos de cada algoritmo frente al EEF y comparación pareada (mismo ECG). */
 function AciertosPorAlgoritmo({ resumen }: { resumen: Resumen }) {
-  const algs = (['easy_wpw', 'arruda'] as CodigoAlgoritmo[]).filter((a) => resumen.porAlgoritmo[a]);
-  const p = resumen.pareado;
+  const algs = (['smart_wpw', 'easy_wpw', 'arruda'] as CodigoAlgoritmo[]).filter((a) => resumen.porAlgoritmo[a]);
+  const pares = resumen.pareados.filter((p) => p.casos > 0);
+  const corto = (a: CodigoAlgoritmo) => NOMBRES_ALGORITMO[a].split(' ')[0];
   return (
     <div className="aciertos-algoritmos" data-testid="aciertos-algoritmos">
       <table className="criterios">
@@ -175,13 +176,13 @@ function AciertosPorAlgoritmo({ resumen }: { resumen: Resumen }) {
           })}
         </tbody>
       </table>
-      {p.casos > 0 && (
-        <p className="nota" data-testid="comparacion-pareada">
-          Mismo ECG con los dos algoritmos: {p.casos} {p.casos === 1 ? 'caso' : 'casos'}. Aciertan ambos: {p.ambos} · solo
-          EASY-WPW: {p.soloEasy} · solo Arruda: {p.soloArruda} · ninguno: {p.ninguno}.
+      {pares.map((p) => (
+        <p key={`${p.a}-${p.b}`} className="nota" data-testid="comparacion-pareada">
+          {corto(p.a)} frente a {corto(p.b)}, mismo ECG: {p.casos} {p.casos === 1 ? 'caso' : 'casos'}. Aciertan ambos:{' '}
+          {p.ambos} · solo {corto(p.a)}: {p.soloA} · solo {corto(p.b)}: {p.soloB} · ninguno: {p.ninguno}.
           {p.casos < 30 && ' Muestra chica: interpretar con cautela.'}
         </p>
-      )}
+      ))}
     </div>
   );
 }

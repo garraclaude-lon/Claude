@@ -95,5 +95,13 @@ Global: 97 % (253/260); frente a Pambrun 90 % y Arruda 73 %. En menores de 18 a�
 3. **Combinaciones no previstas** (por ejemplo, solo II negativa, o II y III sin aVF): el diagrama
    no las contempla → resultado **indeterminado**.
 4. **V3:** se toma la polaridad predominante del QRS en V3 (R prominente = positiva; S prominente o
-   r pequeña con S profunda = negativa), como describe el texto.
+   r pequeña con S profunda = negativa), como describe el texto. Si es isodifásica → indeterminado.
 5. La predicción es un **sector horario**; se compara directamente con la hora confirmada en el EEF.
+
+## Implementación
+
+`src/algoritmo/smartwpw.ts` — algoritmo principal de "Subir ECG" desde la versión 0.9.0 de la app.
+Para el esquema, el 3D y la comparación con los demás algoritmos, cada sector se asocia a una región
+de la app: A → DA/DAL, LA → DL, LP y P → DP/DPL, PS → PST, MSP y MS → MST, AS → AS/PSAD,
+L → IL/IAL, HPL y LPL → IP/IPL, P&PS → PSM. La concordancia con el EEF se mide por la hora.
+
